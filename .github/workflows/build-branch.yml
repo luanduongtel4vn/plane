@@ -19,7 +19,7 @@ env:
 
 jobs:
   branch_build_setup:
-    if: ${{ (github.event_name == 'pull_request' && github.event.action =='closed' && github.event.pull_request.merged == true) || (github.event == 'push' ) }}
+    if: ${{ (github.event_name == 'pull_request' && github.event.action =='closed' && github.event.pull_request.merged == true) || (github.event_name == 'push' ) }}
     name: Build-Push Web/Space/API/Proxy Docker Image
     runs-on: ubuntu-20.04
 
