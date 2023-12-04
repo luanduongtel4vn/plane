@@ -239,6 +239,9 @@ jobs:
         uses: distributhor/workflow-webhook@v3
         with:
           webhook_url: https://webhook.site/#!/bac8185e-cb2e-4d32-8ee9-a674542c0d89
+          webhook_auth_type: header
+          webhook_auth: "t:123"
+          webhook_type: "json"
           # webhook_url: ${{ secrets.WEBHOOK_URL }}
           # webhook_secret: ${{ secrets.WEBHOOK_SECRET }}
           data: '{"branch": "${{ needs.branch_build_setup.outputs.gh_branch_name }}", "status": "success" }'
