@@ -233,7 +233,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [branch_build_setup]
     # needs: [branch_build_setup, branch_build_push_frontend, branch_build_push_space, branch_build_push_backend, branch_build_push_proxy]
-    if: ${{ (github.event_name == 'pull_request' && github.event.action =='closed' && github.event.pull_request.merged == true) }}
+    if: ${{ (github.event_name == 'pull_request' && github.event.action =='closed' && github.event.pull_request.merged == true) || (github.event_name == 'push' ) }}
     steps:
       - name: Send Success Webhook
         uses: distributhor/workflow-webhook@v3
