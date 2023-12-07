@@ -1,8 +1,9 @@
 {
   "extends": "tsconfig/express.json",
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "additional.d.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules"],
   "compilerOptions": {
-    "baseUrl": "src/"
+    "baseUrl": "src/",
+    "outDir": "./dist",
   }
 }

@@ -80,3 +80,6 @@ tmp/
 ## packages
 dist
 .temp/
+
+# Log files
+*.log
