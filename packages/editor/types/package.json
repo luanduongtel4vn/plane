@@ -1,6 +1,6 @@
 {
   "name": "@plane/editor-types",
-  "version": "0.1.0",
+  "version": "0.14.0",
   "description": "Package that powers Plane's Editor with extensions",
   "private": true,
   "main": "./dist/index.mjs",
@@ -17,7 +17,7 @@
     }
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup --minify",
     "dev": "tsup --watch",
     "check-types": "tsc --noEmit"
   },
@@ -32,6 +32,7 @@
     "eslint-config-next": "13.2.4"
   },
   "devDependencies": {
+    "@tiptap/core": "^2.1.12",
     "@types/node": "18.15.3",
     "@types/react": "^18.2.39",
     "@types/react-dom": "^18.2.14",

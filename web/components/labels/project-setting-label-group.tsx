@@ -77,7 +77,6 @@ export const ProjectSettingLabelGroup: React.FC<Props> = observer((props) => {
           <Droppable
             key={`label.group.droppable.${label.id}`}
             droppableId={`label.group.droppable.${label.id}`}
-            isCombineEnabled={!groupDragSnapshot.isDragging && !isUpdating}
             isDropDisabled={groupDragSnapshot.isDragging || isUpdating || isDropDisabled}
           >
             {(droppableProvided) => (
@@ -128,9 +127,9 @@ export const ProjectSettingLabelGroup: React.FC<Props> = observer((props) => {
                     leaveTo="transform opacity-0"
                   >
                     <Disclosure.Panel>
-                      <div className="mt-2.5 ml-6">
+                      <div className="ml-6 mt-2.5">
                         {labelChildren.map((child, index) => (
-                          <div key={child.id} className={`group w-full flex items-center text-sm`}>
+                          <div key={child.id} className={`group flex w-full items-center text-sm`}>
                             <Draggable
                               draggableId={`label.draggable.${child.id}`}
                               index={index}

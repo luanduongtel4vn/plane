@@ -1,12 +1,13 @@
 import { useCallback } from "react";
 import { useRouter } from "next/router";
 import { observer } from "mobx-react-lite";
+import { Plus } from "lucide-react";
 // mobx store
 import { useMobxStore } from "lib/mobx/store-provider";
 // components
 import { DisplayFiltersSelection, FiltersDropdown, FilterSelection, LayoutSelection } from "components/issues";
 // ui
-import { Breadcrumbs, CustomMenu, PhotoFilterIcon } from "@plane/ui";
+import { Breadcrumbs, Button, CustomMenu, PhotoFilterIcon } from "@plane/ui";
 // helpers
 import { truncateText } from "helpers/string.helper";
 import { renderEmoji } from "helpers/emoji.helper";
@@ -15,6 +16,8 @@ import { IIssueDisplayFilterOptions, IIssueDisplayProperties, IIssueFilterOption
 // constants
 import { ISSUE_DISPLAY_FILTERS_BY_LAYOUT } from "constants/issue";
 import { EFilterType } from "store/issues/types";
+import { EProjectStore } from "store/command-palette.store";
+import { EUserWorkspaceRoles } from "constants/workspace";
 
 export const ProjectViewIssuesHeader: React.FC = observer(() => {
   const router = useRouter();
@@ -25,17 +28,16 @@ export const ProjectViewIssuesHeader: React.FC = observer(() => {
   };
 
   const {
-    issueFilter: issueFilterStore,
-    projectViewFilters: projectViewFiltersStore,
     project: { currentProjectDetails },
     projectLabel: { projectLabels },
     projectMember: { projectMembers },
     projectState: projectStateStore,
     projectViews: projectViewsStore,
     viewIssuesFilter: { issueFilters, updateFilters },
+    commandPalette: commandPaletteStore,
+    trackEvent: { setTrackElement },
+    user: { currentProjectRole },
   } = useMobxStore();
-
-  const storedFilters = viewId ? projectViewFiltersStore.storedFilters[viewId.toString()] : undefined;
 
   const activeLayout = issueFilters?.displayFilters?.layout;
 
@@ -85,8 +87,11 @@ export const ProjectViewIssuesHeader: React.FC = observer(() => {
   const viewsList = projectId ? projectViewsStore.viewsList[projectId.toString()] : undefined;
   const viewDetails = viewId ? projectViewsStore.viewDetails[viewId.toString()] : undefined;
 
+  const canUserCreateIssue =
+    currentProjectRole && [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER].includes(currentProjectRole);
+
   return (
-    <div className="relative w-full flex items-center z-10 h-[3.75rem] justify-between gap-x-2 gap-y-4 border-b border-custom-border-200 bg-custom-sidebar-background-100 p-4">
+    <div className="relative z-10 flex h-[3.75rem] w-full items-center justify-between gap-x-2 gap-y-4 border-b border-custom-border-200 bg-custom-sidebar-background-100 p-4">
       <div className="flex items-center gap-2">
         <Breadcrumbs>
           <Breadcrumbs.BreadcrumbItem
@@ -98,7 +103,7 @@ export const ProjectViewIssuesHeader: React.FC = observer(() => {
                   {renderEmoji(currentProjectDetails.emoji)}
                 </span>
               ) : currentProjectDetails?.icon_prop ? (
-                <div className="h-7 w-7 flex-shrink-0 grid place-items-center">
+                <div className="grid h-7 w-7 flex-shrink-0 place-items-center">
                   {renderEmoji(currentProjectDetails.icon_prop)}
                 </div>
               ) : (
@@ -170,6 +175,18 @@ export const ProjectViewIssuesHeader: React.FC = observer(() => {
             handleDisplayPropertiesUpdate={handleDisplayProperties}
           />
         </FiltersDropdown>
+        {
+          <Button
+            onClick={() => {
+              setTrackElement("PROJECT_VIEW_PAGE_HEADER");
+              commandPaletteStore.toggleCreateIssueModal(true, EProjectStore.PROJECT_VIEW);
+            }}
+            size="sm"
+            prependIcon={<Plus />}
+          >
+            Add Issue
+          </Button>
+        }
       </div>
     </div>
   );

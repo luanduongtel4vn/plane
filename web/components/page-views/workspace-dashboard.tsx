@@ -22,7 +22,7 @@ export const WorkspaceDashboardView = observer(() => {
     user: userStore,
     project: projectStore,
     commandPalette: commandPaletteStore,
-    trackEvent: { setTrackElement },
+    trackEvent: { setTrackElement, postHogEventTracker },
   } = useMobxStore();
 
   const user = userStore.currentUser;
@@ -37,7 +37,18 @@ export const WorkspaceDashboardView = observer(() => {
   );
 
   const handleTourCompleted = () => {
-    userStore.updateTourCompleted();
+    userStore
+      .updateTourCompleted()
+      .then(() => {
+        postHogEventTracker("USER_TOUR_COMPLETE", {
+          user_id: user?.id,
+          email: user?.email,
+          state: "SUCCESS",
+        });
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
   return (
@@ -46,11 +57,11 @@ export const WorkspaceDashboardView = observer(() => {
         <ProductUpdatesModal isOpen={isProductUpdatesModalOpen} setIsOpen={setIsProductUpdatesModalOpen} />
       )} */}
       {user && !user.is_tour_completed && (
-        <div className="fixed top-0 left-0 h-full w-full bg-custom-backdrop bg-opacity-50 transition-opacity z-20 grid place-items-center">
+        <div className="fixed left-0 top-0 z-20 grid h-full w-full place-items-center bg-custom-backdrop bg-opacity-50 transition-opacity">
           <TourRoot onComplete={handleTourCompleted} />
         </div>
       )}
-      <div className="p-8 space-y-8">
+      <div className="space-y-8 p-8">
         {user && <UserGreetingsView user={user} />}
 
         {projects ? (

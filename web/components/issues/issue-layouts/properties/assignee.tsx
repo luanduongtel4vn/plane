@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useMobxStore } from "lib/mobx/store-provider";
 import { usePopper } from "react-popper";
 import { Combobox } from "@headlessui/react";
-import { Check, ChevronDown, Search, User2 } from "lucide-react";
+import { Check, ChevronDown, CircleUser, Search } from "lucide-react";
 // ui
 import { Avatar, AvatarGroup, Tooltip } from "@plane/ui";
 // types
@@ -38,7 +38,6 @@ export const IssuePropertyAssignee: React.FC<IIssuePropertyAssignee> = observer(
     optionsClassName,
     placement,
     multiple = false,
-    noLabelBorder = false,
   } = props;
   // store
   const {
@@ -101,7 +100,7 @@ export const IssuePropertyAssignee: React.FC<IIssuePropertyAssignee> = observer(
 
   const label = (
     <Tooltip tooltipHeading="Assignee" tooltipContent={getTooltipContent()} position="top">
-      <div className="flex items-center cursor-pointer h-full w-full gap-2 text-custom-text-200">
+      <div className="flex h-full w-full cursor-pointer items-center gap-2 text-custom-text-200">
         {value && value.length > 0 && Array.isArray(value) ? (
           <AvatarGroup showTooltip={false}>
             {value.map((assigneeId) => {
@@ -111,8 +110,8 @@ export const IssuePropertyAssignee: React.FC<IIssuePropertyAssignee> = observer(
             })}
           </AvatarGroup>
         ) : (
-          <span className="flex items-end justify-center h-5 w-5 bg-custom-background-80 rounded-full border border-dashed border-custom-text-400">
-            <User2 className="h-4 w-4 text-custom-text-400" />
+          <span className="h-5 w-5 grid place-items-center">
+            <CircleUser className="h-4 w-4" strokeWidth={1.5} />
           </span>
         )}
       </div>
@@ -140,8 +139,8 @@ export const IssuePropertyAssignee: React.FC<IIssuePropertyAssignee> = observer(
         <button
           ref={setReferenceElement}
           type="button"
-          className={`flex items-center justify-between gap-1 w-full text-xs ${
-            disabled ? "cursor-not-allowed text-custom-text-200" : "cursor-pointer hover:bg-custom-background-80"
+          className={`flex w-full items-center justify-between gap-1 text-xs ${
+            disabled ? "cursor-not-allowed text-custom-text-200" : "cursor-pointer"
           } ${buttonClassName}`}
           onClick={() => !projectMembers && getWorkspaceMembers()}
         >
@@ -151,7 +150,7 @@ export const IssuePropertyAssignee: React.FC<IIssuePropertyAssignee> = observer(
       </Combobox.Button>
       <Combobox.Options className="fixed z-10">
         <div
-          className={`border border-custom-border-300 px-2 py-2.5 rounded bg-custom-background-100 text-xs shadow-custom-shadow-rg focus:outline-none w-48 whitespace-nowrap my-1 ${optionsClassName}`}
+          className={`my-1 w-48 whitespace-nowrap rounded border border-custom-border-300 bg-custom-background-100 px-2 py-2.5 text-xs shadow-custom-shadow-rg focus:outline-none ${optionsClassName}`}
           ref={setPopperElement}
           style={styles.popper}
           {...attributes.popper}
@@ -159,14 +158,14 @@ export const IssuePropertyAssignee: React.FC<IIssuePropertyAssignee> = observer(
           <div className="flex w-full items-center justify-start rounded border border-custom-border-200 bg-custom-background-90 px-2">
             <Search className="h-3.5 w-3.5 text-custom-text-300" />
             <Combobox.Input
-              className="w-full bg-transparent py-1 px-2 text-xs text-custom-text-200 placeholder:text-custom-text-400 focus:outline-none"
+              className="w-full bg-transparent px-2 py-1 text-xs text-custom-text-200 placeholder:text-custom-text-400 focus:outline-none"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search"
               displayValue={(assigned: any) => assigned?.name}
             />
           </div>
-          <div className={`mt-2 space-y-1 max-h-48 overflow-y-scroll`}>
+          <div className={`mt-2 max-h-48 space-y-1 overflow-y-scroll`}>
             {isLoading ? (
               <p className="text-center text-custom-text-200">Loading...</p>
             ) : filteredOptions.length > 0 ? (
@@ -175,7 +174,7 @@ export const IssuePropertyAssignee: React.FC<IIssuePropertyAssignee> = observer(
                   key={option.value}
                   value={option.value}
                   className={({ active, selected }) =>
-                    `flex items-center justify-between gap-2 cursor-pointer select-none truncate rounded px-1 py-1.5 ${
+                    `flex cursor-pointer select-none items-center justify-between gap-2 truncate rounded px-1 py-1.5 ${
                       active && !selected ? "bg-custom-background-80" : ""
                     } ${selected ? "text-custom-text-100" : "text-custom-text-200"}`
                   }

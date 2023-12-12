@@ -19,7 +19,7 @@ export const WorkspaceAuthWrapper: FC<IWorkspaceAuthWrapper> = observer((props) 
     user: { currentWorkspaceMemberInfo, hasPermissionToCurrentWorkspace, fetchUserWorkspaceInfo },
     project: { fetchProjects },
     workspace: { fetchWorkspaceLabels },
-    workspaceMember: { fetchWorkspaceMembers },
+    workspaceMember: { fetchWorkspaceMembers, fetchWorkspaceUserProjectsRole },
   } = useMobxStore();
 
   // router
@@ -45,11 +45,16 @@ export const WorkspaceAuthWrapper: FC<IWorkspaceAuthWrapper> = observer((props) 
     workspaceSlug ? `WORKSPACE_LABELS_${workspaceSlug}` : null,
     workspaceSlug ? () => fetchWorkspaceLabels(workspaceSlug.toString()) : null
   );
+  // fetch workspace user projects role
+  useSWR(
+    workspaceSlug ? `WORKSPACE_PROJECTS_ROLE_${workspaceSlug}` : null,
+    workspaceSlug ? () => fetchWorkspaceUserProjectsRole(workspaceSlug.toString()) : null
+  );
 
   // while data is being loaded
   if (!currentWorkspaceMemberInfo && hasPermissionToCurrentWorkspace === undefined) {
     return (
-      <div className="grid h-screen place-items-center p-4 bg-custom-background-100">
+      <div className="grid h-screen place-items-center bg-custom-background-100 p-4">
         <div className="flex flex-col items-center gap-3 text-center">
           <Spinner />
         </div>

@@ -38,27 +38,25 @@ export const ProjectViewKanBanLayout: React.FC = observer(() => {
     },
   };
 
-  const handleDragDrop = (
+  const handleDragDrop = async (
     source: any,
     destination: any,
     subGroupBy: string | null,
     groupBy: string | null,
     issues: IIssueResponse | undefined,
     issueWithIds: IGroupedIssues | ISubGroupedIssues | TUnGroupedIssues | undefined
-  ) => {
-    if (kanBanHelperStore.handleDragDrop)
-      kanBanHelperStore.handleDragDrop(
-        source,
-        destination,
-        workspaceSlug,
-        projectId,
-        projectViewIssuesStore,
-        subGroupBy,
-        groupBy,
-        issues,
-        issueWithIds
-      );
-  };
+  ) =>
+    await kanBanHelperStore.handleDragDrop(
+      source,
+      destination,
+      workspaceSlug,
+      projectId,
+      projectViewIssuesStore,
+      subGroupBy,
+      groupBy,
+      issues,
+      issueWithIds
+    );
 
   return (
     <BaseKanBanRoot

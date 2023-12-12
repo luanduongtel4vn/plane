@@ -39,9 +39,10 @@ const IssueNavbar = observer(() => {
   }: RootStore = useMobxStore();
   // router
   const router = useRouter();
-  const { workspace_slug, project_slug, board, states, priorities, labels } = router.query as {
+  const { workspace_slug, project_slug, board, peekId, states, priorities, labels } = router.query as {
     workspace_slug: string;
     project_slug: string;
+    peekId: string;
     board: string;
     states: string;
     priorities: string;
@@ -84,6 +85,7 @@ const IssueNavbar = observer(() => {
       if (currentBoard) {
         if (projectStore?.activeBoard === null || projectStore?.activeBoard !== currentBoard) {
           let params: any = { board: currentBoard };
+          if (peekId && peekId.length > 0) params = { ...params, peekId: peekId };
           if (priorities && priorities.length > 0) params = { ...params, priorities: priorities };
           if (states && states.length > 0) params = { ...params, states: states };
           if (labels && labels.length > 0) params = { ...params, labels: labels };
@@ -103,7 +105,19 @@ const IssueNavbar = observer(() => {
         }
       }
     }
-  }, [board, workspace_slug, project_slug, router, projectStore, projectStore?.deploySettings, updateFilters]);
+  }, [
+    board,
+    workspace_slug,
+    project_slug,
+    router,
+    projectStore,
+    projectStore?.deploySettings,
+    updateFilters,
+    labels,
+    states,
+    priorities,
+    peekId,
+  ]);
 
   return (
     <div className="relative flex w-full items-center gap-4 px-5">
@@ -116,7 +130,7 @@ const IssueNavbar = observer(() => {
                 {renderEmoji(projectStore.project.emoji)}
               </span>
             ) : projectStore.project?.icon_prop ? (
-              <div className="h-7 w-7 flex-shrink-0 grid place-items-center">
+              <div className="grid h-7 w-7 flex-shrink-0 place-items-center">
                 {renderEmoji(projectStore.project.icon_prop)}
               </div>
             ) : (
@@ -155,12 +169,12 @@ const IssueNavbar = observer(() => {
 
       {user ? (
         <div className="flex items-center gap-2 rounded border border-custom-border-200 p-2">
-          <Avatar name={user?.display_name} src={user?.avatar} size={24} shape="square" className="!text-base" />
+          <Avatar name={user?.display_name} src={user?.avatar} shape="square" size="sm" />
           <h6 className="text-xs font-medium">{user.display_name}</h6>
         </div>
       ) : (
         <div className="flex-shrink-0">
-          <Link href={`/login/?next_path=${router.asPath}`}>
+          <Link href={`/?next_path=${router.asPath}`}>
             <Button variant="outline-primary">Sign in</Button>
           </Link>
         </div>

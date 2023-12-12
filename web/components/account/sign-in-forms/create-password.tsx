@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import { Controller, useForm } from "react-hook-form";
 // services
@@ -16,6 +16,7 @@ type Props = {
   email: string;
   handleStepChange: (step: ESignInSteps) => void;
   handleSignInRedirection: () => Promise<void>;
+  isOnboarded: boolean;
 };
 
 type TCreatePasswordFormValues = {
@@ -32,7 +33,7 @@ const defaultValues: TCreatePasswordFormValues = {
 const authService = new AuthService();
 
 export const CreatePasswordForm: React.FC<Props> = (props) => {
-  const { email, handleSignInRedirection } = props;
+  const { email, handleSignInRedirection, isOnboarded } = props;
   // toast alert
   const { setToastAlert } = useToast();
   // form info
@@ -40,6 +41,7 @@ export const CreatePasswordForm: React.FC<Props> = (props) => {
     control,
     formState: { errors, isSubmitting, isValid },
     handleSubmit,
+    setFocus,
   } = useForm<TCreatePasswordFormValues>({
     defaultValues: {
       ...defaultValues,
@@ -73,13 +75,16 @@ export const CreatePasswordForm: React.FC<Props> = (props) => {
       );
   };
 
+  useEffect(() => {
+    setFocus("password");
+  }, [setFocus]);
+
   return (
     <>
-      <h1 className="text-center text-2xl sm:text-2.5xl font-medium text-onboarding-text-100">
-        Let{"'"}s get a new password
+      <h1 className="sm:text-2.5xl text-center text-2xl font-medium text-onboarding-text-100">
+        Get on your flight deck
       </h1>
-
-      <form onSubmit={handleSubmit(handleCreatePassword)} className="mt-11 sm:w-96 mx-auto space-y-4">
+      <form onSubmit={handleSubmit(handleCreatePassword)} className="mx-auto mt-11 space-y-4 sm:w-96">
         <Controller
           control={control}
           name="email"
@@ -97,37 +102,32 @@ export const CreatePasswordForm: React.FC<Props> = (props) => {
               ref={ref}
               hasError={Boolean(errors.email)}
               placeholder="orville.wright@firstflight.com"
-              className="w-full h-[46px] text-onboarding-text-400 border border-onboarding-border-100 pr-12"
+              className="h-[46px] w-full border border-onboarding-border-100 !bg-onboarding-background-200 pr-12 text-onboarding-text-400"
               disabled
             />
           )}
         />
-        <div>
-          <Controller
-            control={control}
-            name="password"
-            rules={{
-              required: "Password is required",
-            }}
-            render={({ field: { value, onChange, ref } }) => (
-              <Input
-                type="password"
-                value={value}
-                onChange={onChange}
-                ref={ref}
-                hasError={Boolean(errors.password)}
-                placeholder="Create password"
-                className="w-full h-[46px] placeholder:text-onboarding-text-400 border border-onboarding-border-100 pr-12"
-                minLength={8}
-              />
-            )}
-          />
-          <p className="text-xs text-onboarding-text-200 mt-3 pb-2">
-            Whatever you choose now will be your account{"'"}s password until you change it.
-          </p>
-        </div>
+        <Controller
+          control={control}
+          name="password"
+          rules={{
+            required: "Password is required",
+          }}
+          render={({ field: { value, onChange, ref } }) => (
+            <Input
+              type="password"
+              value={value}
+              onChange={onChange}
+              ref={ref}
+              hasError={Boolean(errors.password)}
+              placeholder="Choose password"
+              className="h-[46px] w-full border border-onboarding-border-100 !bg-onboarding-background-200 pr-12 placeholder:text-onboarding-text-400"
+              minLength={8}
+            />
+          )}
+        />
         <Button type="submit" variant="primary" className="w-full" size="xl" disabled={!isValid} loading={isSubmitting}>
-          {isSubmitting ? "Submitting..." : "Go to workspace"}
+          {isOnboarded ? "Go to workspace" : "Set up workspace"}
         </Button>
         <p className="text-xs text-onboarding-text-200">
           When you click the button above, you agree with our{" "}

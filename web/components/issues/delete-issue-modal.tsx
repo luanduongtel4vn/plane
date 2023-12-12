@@ -3,6 +3,8 @@ import { Dialog, Transition } from "@headlessui/react";
 import { AlertTriangle } from "lucide-react";
 // ui
 import { Button } from "@plane/ui";
+// hooks
+import useToast from "hooks/use-toast";
 // types
 import type { IIssue } from "types";
 
@@ -18,6 +20,8 @@ export const DeleteIssueModal: React.FC<Props> = (props) => {
 
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
 
+  const { setToastAlert } = useToast();
+
   useEffect(() => {
     setIsDeleteLoading(false);
   }, [isOpen]);
@@ -29,7 +33,24 @@ export const DeleteIssueModal: React.FC<Props> = (props) => {
 
   const handleIssueDelete = async () => {
     setIsDeleteLoading(true);
-    if (onSubmit) await onSubmit().finally(() => setIsDeleteLoading(false));
+    if (onSubmit)
+      await onSubmit()
+        .then(() => {
+          setToastAlert({
+            title: "Success",
+            type: "success",
+            message: "Issue deleted successfully",
+          });
+          onClose();
+        })
+        .catch(() => {
+          setToastAlert({
+            title: "Error",
+            type: "error",
+            message: "Failed to delete issue",
+          });
+        })
+        .finally(() => setIsDeleteLoading(false));
   };
 
   return (

@@ -4,8 +4,6 @@ import { Popover, Transition } from "@headlessui/react";
 import { Placement } from "@popperjs/core";
 // ui
 import { Button } from "@plane/ui";
-// icons
-import { ChevronUp } from "lucide-react";
 
 type Props = {
   children: React.ReactNode;
@@ -31,14 +29,7 @@ export const FiltersDropdown: React.FC<Props> = (props) => {
         return (
           <>
             <Popover.Button as={React.Fragment}>
-              <Button
-                ref={setReferenceElement}
-                variant="neutral-primary"
-                size="sm"
-                appendIcon={
-                  <ChevronUp className={`transition-all ${open ? "" : "rotate-180"}`} size={14} strokeWidth={2} />
-                }
-              >
+              <Button ref={setReferenceElement} variant="neutral-primary" size="sm">
                 <div className={`${open ? "text-custom-text-100" : "text-custom-text-200"}`}>
                   <span>{title}</span>
                 </div>
@@ -55,12 +46,12 @@ export const FiltersDropdown: React.FC<Props> = (props) => {
             >
               <Popover.Panel>
                 <div
-                  className="z-10 bg-custom-background-100 border border-custom-border-200 shadow-custom-shadow-rg rounded overflow-hidden"
+                  className="z-10 overflow-hidden rounded border border-custom-border-200 bg-custom-background-100 shadow-custom-shadow-rg"
                   ref={setPopperElement}
                   style={styles.popper}
                   {...attributes.popper}
                 >
-                  <div className="w-[18.75rem] max-h-[37.5rem] flex flex-col overflow-hidden">{children}</div>
+                  <div className="flex max-h-[37.5rem] w-[18.75rem] flex-col overflow-hidden">{children}</div>
                 </div>
               </Popover.Panel>
             </Transition>

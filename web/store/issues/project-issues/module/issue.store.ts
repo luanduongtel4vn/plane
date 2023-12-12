@@ -53,7 +53,8 @@ export interface IModuleIssuesStore {
     workspaceSlug: string,
     moduleId: string,
     issueIds: string[],
-    fetchAfterAddition?: boolean
+    fetchAfterAddition?: boolean,
+    projectId?: string
   ) => Promise<any>;
   removeIssueFromModule: (
     workspaceSlug: string,
@@ -74,8 +75,6 @@ export class ModuleIssuesStore extends IssueBaseStore implements IModuleIssuesSt
   // service
   moduleService;
   issueService;
-
-  currentProjectId: string | undefined;
 
   //viewData
   viewFlags = {
@@ -161,7 +160,6 @@ export class ModuleIssuesStore extends IssueBaseStore implements IModuleIssuesSt
   ) => {
     if (!moduleId) return undefined;
 
-    this.currentProjectId = projectId;
     try {
       this.loader = loadType;
 
@@ -252,6 +250,7 @@ export class ModuleIssuesStore extends IssueBaseStore implements IModuleIssuesSt
       if (!_issues) _issues = {};
       if (!_issues[moduleId]) _issues[moduleId] = {};
       delete _issues?.[moduleId]?.[issueId];
+      _issues[moduleId] = { ..._issues[moduleId] };
 
       runInAction(() => {
         this.issues = _issues;
@@ -306,19 +305,28 @@ export class ModuleIssuesStore extends IssueBaseStore implements IModuleIssuesSt
     }
   };
 
-  addIssueToModule = async (workspaceSlug: string, moduleId: string, issueIds: string[], fetchAfterAddition = true) => {
-    if (!this.currentProjectId) return;
+  addIssueToModule = async (
+    workspaceSlug: string,
+    moduleId: string,
+    issueIds: string[],
+    fetchAfterAddition = true,
+    projectId?: string
+  ) => {
+    const activeProjectId = this.rootStore.project.projectId;
+    if (!activeProjectId && !projectId) return;
+
+    const projectIdToUpdate: string = projectId || activeProjectId || "";
 
     try {
-      const issueToModule = await this.moduleService.addIssuesToModule(workspaceSlug, this.currentProjectId, moduleId, {
+      const issueToModule = await this.moduleService.addIssuesToModule(workspaceSlug, projectIdToUpdate, moduleId, {
         issues: issueIds,
       });
 
-      if (fetchAfterAddition) this.fetchIssues(workspaceSlug, this.currentProjectId, "mutation", moduleId);
+      if (fetchAfterAddition) this.fetchIssues(workspaceSlug, projectIdToUpdate, "mutation", moduleId);
 
       return issueToModule;
     } catch (error) {
-      this.fetchIssues(workspaceSlug, this.currentProjectId, "mutation", moduleId);
+      this.fetchIssues(workspaceSlug, projectIdToUpdate, "mutation", moduleId);
       throw error;
     }
   };

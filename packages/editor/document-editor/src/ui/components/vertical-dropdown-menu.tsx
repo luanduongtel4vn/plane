@@ -23,11 +23,7 @@ export interface IVerticalDropdownMenuProps {
   items: IVerticalDropdownItemProps[];
 }
 
-const VerticalDropdownItem = ({
-  Icon,
-  label,
-  action,
-}: IVerticalDropdownItemProps) => {
+const VerticalDropdownItem = ({ Icon, label, action }: IVerticalDropdownItemProps) => {
   return (
     <CustomMenu.MenuItem onClick={action} className="flex items-center gap-2">
       <Icon className="h-3 w-3" />
@@ -39,22 +35,14 @@ const VerticalDropdownItem = ({
 export const VerticalDropdownMenu = ({ items }: IVerticalDropdownMenuProps) => {
   return (
     <CustomMenu
-      maxHeight={"lg"}
-      className={"h-4"}
+      maxHeight={"md"}
+      className={"h-4.5 mt-1"}
       placement={"bottom-start"}
-      optionsClassName={
-        "border-custom-border border-r border-solid transition-all duration-200 ease-in-out "
-      }
+      optionsClassName={"border-custom-border border-r border-solid transition-all duration-200 ease-in-out "}
       customButton={<MoreVertical size={14} />}
     >
       {items.map((item, index) => (
-        <VerticalDropdownItem
-          key={index}
-          type={item.type}
-          Icon={item.Icon}
-          label={item.label}
-          action={item.action}
-        />
+        <VerticalDropdownItem key={index} type={item.type} Icon={item.Icon} label={item.label} action={item.action} />
       ))}
     </CustomMenu>
   );

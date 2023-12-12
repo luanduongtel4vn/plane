@@ -54,7 +54,14 @@ export const ProjectViewForm: React.FC<Props> = observer(({ handleFormSubmit, ha
 
   // for removing filters from a key
   const handleRemoveFilter = (key: keyof IIssueFilterOptions, value: string | null) => {
-    if (!value) return;
+    // If value is null then remove all the filters of that key
+    if (!value) {
+      setValue("query_data", {
+        ...selectedFilters,
+        [key]: null,
+      });
+      return;
+    }
 
     const newValues = selectedFilters?.[key] ?? [];
 
@@ -119,7 +126,7 @@ export const ProjectViewForm: React.FC<Props> = observer(({ handleFormSubmit, ha
                   onChange={onChange}
                   hasError={Boolean(errors.name)}
                   placeholder="Title"
-                  className="resize-none w-full text-xl focus:border-blue-400"
+                  className="w-full resize-none text-xl focus:border-blue-400"
                 />
               )}
             />
@@ -199,8 +206,8 @@ export const ProjectViewForm: React.FC<Props> = observer(({ handleFormSubmit, ha
               ? "Updating View..."
               : "Update View"
             : isSubmitting
-            ? "Creating View..."
-            : "Create View"}
+              ? "Creating View..."
+              : "Create View"}
         </Button>
       </div>
     </form>

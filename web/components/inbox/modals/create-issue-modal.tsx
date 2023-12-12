@@ -62,6 +62,7 @@ export const CreateInboxIssueModal: React.FC<Props> = observer((props) => {
     inboxIssueDetails: inboxIssueDetailsStore,
     trackEvent: { postHogEventTracker },
     appConfig: { envConfig },
+    workspace: { currentWorkspace },
   } = useMobxStore();
 
   const {
@@ -91,16 +92,32 @@ export const CreateInboxIssueModal: React.FC<Props> = observer((props) => {
           router.push(`/${workspaceSlug}/projects/${projectId}/inbox/${inboxId}?inboxIssueId=${res.issue_inbox[0].id}`);
           handleClose();
         } else reset(defaultValues);
-        postHogEventTracker("ISSUE_CREATE", {
-          ...res,
-          state: "SUCCESS",
-        });
+        postHogEventTracker(
+          "ISSUE_CREATED",
+          {
+            ...res,
+            state: "SUCCESS",
+          },
+          {
+            isGrouping: true,
+            groupType: "Workspace_metrics",
+            gorupId: currentWorkspace?.id!,
+          }
+        );
       })
       .catch((error) => {
         console.log(error);
-        postHogEventTracker("ISSUE_CREATE", {
-          state: "FAILED",
-        });
+        postHogEventTracker(
+          "ISSUE_CREATED",
+          {
+            state: "FAILED",
+          },
+          {
+            isGrouping: true,
+            groupType: "Workspace_metrics",
+            gorupId: currentWorkspace?.id!,
+          }
+        );
       });
   };
 
@@ -204,7 +221,7 @@ export const CreateInboxIssueModal: React.FC<Props> = observer((props) => {
                                 ref={ref}
                                 hasError={Boolean(errors.name)}
                                 placeholder="Title"
-                                className="resize-none text-xl w-full"
+                                className="w-full resize-none text-xl"
                               />
                             )}
                           />

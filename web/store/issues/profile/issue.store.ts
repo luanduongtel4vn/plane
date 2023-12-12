@@ -28,6 +28,7 @@ export interface IProfileIssuesStore {
     workspaceSlug: string,
     userId: string,
     loadType: TLoader,
+    id?: string | undefined,
     type?: "assigned" | "created" | "subscribed"
   ) => Promise<IIssueResponse>;
   createIssue: (workspaceSlug: string, userId: string, data: Partial<IIssue>) => Promise<IIssue | undefined>;
@@ -135,7 +136,7 @@ export class ProfileIssuesStore extends IssueBaseStore implements IProfileIssues
       return {
         enableQuickAdd: false,
         enableIssueCreation: false,
-        enableInlineEditing: false,
+        enableInlineEditing: true,
       };
     }
 
@@ -150,6 +151,7 @@ export class ProfileIssuesStore extends IssueBaseStore implements IProfileIssues
     workspaceSlug: string,
     userId: string,
     loadType: TLoader = "init-loader",
+    id?: string | undefined,
     type?: "assigned" | "created" | "subscribed"
   ) => {
     try {
@@ -231,8 +233,8 @@ export class ProfileIssuesStore extends IssueBaseStore implements IProfileIssues
       let _issues = { ...this.issues };
       if (!_issues) _issues = {};
       if (!_issues[userId]) _issues[userId] = { assigned: {}, created: {}, subscribed: {} };
-      _issues[userId][this.currentUserIssueTab][userId] = {
-        ..._issues[userId][this.currentUserIssueTab][userId],
+      _issues[userId][this.currentUserIssueTab][issueId] = {
+        ..._issues[userId][this.currentUserIssueTab][issueId],
         ...data,
       };
 

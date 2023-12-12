@@ -5,7 +5,7 @@ import useSWR from "swr";
 // mobx store
 import { useMobxStore } from "lib/mobx/store-provider";
 // components
-import { GlobalViewEmptyState, GlobalViewsAppliedFiltersRoot } from "components/issues";
+import { GlobalViewsAppliedFiltersRoot } from "components/issues";
 import { SpreadsheetView } from "components/issues/issue-layouts";
 import { AllIssueQuickActions } from "components/issues/issue-layouts/quick-action-dropdowns";
 // ui
@@ -16,6 +16,7 @@ import { IIssueUnGroupedStructure } from "store/issue";
 import { EIssueActions } from "../types";
 
 import { EFilterType, TUnGroupedIssues } from "store/issues/types";
+import { EUserWorkspaceRoles } from "constants/workspace";
 
 type Props = {
   type?: TStaticViewTypes | null;
@@ -35,6 +36,7 @@ export const AllIssueLayoutRoot: React.FC<Props> = observer((props) => {
     globalViews: { fetchAllGlobalViews },
     workspaceGlobalIssues: { loader, getIssues, getIssuesIds, fetchIssues, updateIssue, removeIssue },
     workspaceGlobalIssuesFilter: { currentView, issueFilters, fetchFilters, updateFilters, setCurrentView },
+    workspaceMember: { currentWorkspaceUserProjectsRole },
   } = useMobxStore();
 
   useSWR(workspaceSlug ? `WORKSPACE_GLOBAL_VIEWS${workspaceSlug}` : null, async () => {
@@ -55,7 +57,13 @@ export const AllIssueLayoutRoot: React.FC<Props> = observer((props) => {
     }
   );
 
-  const isEditingAllowed = false;
+  const canEditProperties = (projectId: string | undefined) => {
+    if (!projectId) return false;
+
+    const currentProjectRole = currentWorkspaceUserProjectsRole && currentWorkspaceUserProjectsRole[projectId];
+
+    return !!currentProjectRole && currentProjectRole >= EUserWorkspaceRoles.MEMBER;
+  };
 
   const issuesResponse = getIssues;
   const issueIds = (getIssuesIds ?? []) as TUnGroupedIssues;
@@ -81,7 +89,8 @@ export const AllIssueLayoutRoot: React.FC<Props> = observer((props) => {
       if (action === EIssueActions.UPDATE) await issueActions[action]!(issue);
       if (action === EIssueActions.DELETE) await issueActions[action]!(issue);
     },
-    [getIssues]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const handleDisplayFiltersUpdate = useCallback(
@@ -94,19 +103,19 @@ export const AllIssueLayoutRoot: React.FC<Props> = observer((props) => {
   );
 
   return (
-    <div className="relative w-full h-full flex flex-col overflow-hidden">
-      {currentView != currentIssueView && loader === "init-loader" ? (
-        <div className="w-full h-full flex justify-center items-center">
+    <div className="relative flex h-full w-full flex-col overflow-hidden">
+      {currentView != currentIssueView && (loader === "init-loader" || !getIssues) ? (
+        <div className="flex h-full w-full items-center justify-center">
           <Spinner />
         </div>
       ) : (
         <>
           <GlobalViewsAppliedFiltersRoot />
 
-          {Object.keys(getIssues ?? {}).length == 0 && !loader ? (
+          {Object.keys(getIssues ?? {}).length == 0 ? (
             <>{/* <GlobalViewEmptyState /> */}</>
           ) : (
-            <div className="w-full h-full relative overflow-auto">
+            <div className="relative h-full w-full overflow-auto">
               <SpreadsheetView
                 displayProperties={issueFilters?.displayProperties ?? {}}
                 displayFilters={issueFilters?.displayFilters ?? {}}
@@ -122,7 +131,7 @@ export const AllIssueLayoutRoot: React.FC<Props> = observer((props) => {
                 members={workspaceMembers?.map((m) => m.member)}
                 labels={workspaceLabels || undefined}
                 handleIssues={handleIssues}
-                disableUserActions={isEditingAllowed}
+                canEditProperties={canEditProperties}
                 viewId={currentIssueView}
               />
             </div>

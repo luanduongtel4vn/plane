@@ -10,9 +10,11 @@ import { NewEmptyState } from "components/common/new-empty-state";
 // ui
 import { Loader } from "@plane/ui";
 // images
-import emptyPage from "public/empty-state/empty_page.webp";
+import emptyPage from "public/empty-state/empty_page.png";
 // types
 import { IPage } from "types";
+// constants
+import { EUserWorkspaceRoles } from "constants/workspace";
 
 type IPagesListView = {
   pages: IPage[];
@@ -20,15 +22,31 @@ type IPagesListView = {
 
 export const PagesListView: FC<IPagesListView> = observer(({ pages }) => {
   // store
-  const { commandPalette: commandPaletteStore } = useMobxStore();
+  const {
+    user: { currentProjectRole },
+    commandPalette: { toggleCreatePageModal },
+  } = useMobxStore();
   // router
   const router = useRouter();
   const { workspaceSlug, projectId } = router.query;
 
+  const canUserCreatePage =
+    currentProjectRole && [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER].includes(currentProjectRole);
+
+  const emptyStatePrimaryButton = canUserCreatePage
+    ? {
+        primaryButton: {
+          icon: <Plus className="h-4 w-4" />,
+          text: "Create your first page",
+          onClick: () => toggleCreatePageModal(true),
+        },
+      }
+    : {};
+
   return (
     <>
       {pages && workspaceSlug && projectId ? (
-        <div className="space-y-4 h-full overflow-y-auto">
+        <div className="h-full space-y-4 overflow-y-auto">
           {pages.length > 0 ? (
             <ul role="list" className="divide-y divide-custom-border-200">
               {pages.map((page) => (
@@ -51,11 +69,7 @@ export const PagesListView: FC<IPagesListView> = observer(({ pages }) => {
                   "We wrote Parth and Meera’s love story. You could write your project’s mission, goals, and eventual vision.",
                 direction: "right",
               }}
-              primaryButton={{
-                icon: <Plus className="h-4 w-4" />,
-                text: "Create your first page",
-                onClick: () => commandPaletteStore.toggleCreatePageModal(true),
-              }}
+              {...emptyStatePrimaryButton}
             />
           )}
         </div>

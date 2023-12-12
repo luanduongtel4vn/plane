@@ -10,35 +10,34 @@ import { useRouter } from "next/router";
 
 export const CalendarLayout: React.FC = observer(() => {
   const router = useRouter();
-  const { workspaceSlug, projectId } = router.query as { workspaceSlug: string; projectId: string };
+  const { workspaceSlug, projectId } = router.query;
 
   const {
     projectIssues: issueStore,
-    issueCalendarView: issueCalendarViewStore,
     projectIssuesFilter: projectIssueFiltersStore,
-    calendarHelpers: calendarHelperStore,
+    calendarHelpers: { handleDragDrop: handleCalenderDragDrop },
   } = useMobxStore();
 
   const issueActions = {
     [EIssueActions.UPDATE]: async (issue: IIssue) => {
       if (!workspaceSlug) return;
 
-      issueStore.updateIssue(workspaceSlug, issue.project, issue.id, issue);
+      await issueStore.updateIssue(workspaceSlug.toString(), issue.project, issue.id, issue);
     },
     [EIssueActions.DELETE]: async (issue: IIssue) => {
       if (!workspaceSlug) return;
 
-      issueStore.removeIssue(workspaceSlug, issue.project, issue.id);
+      await issueStore.removeIssue(workspaceSlug.toString(), issue.project, issue.id);
     },
   };
 
-  const handleDragDrop = (source: any, destination: any, issues: IIssue[], issueWithIds: any) => {
-    if (calendarHelperStore.handleDragDrop)
-      calendarHelperStore.handleDragDrop(
+  const handleDragDrop = async (source: any, destination: any, issues: IIssue[], issueWithIds: any) => {
+    if (workspaceSlug && projectId)
+      await handleCalenderDragDrop(
         source,
         destination,
-        workspaceSlug,
-        projectId,
+        workspaceSlug.toString(),
+        projectId.toString(),
         issueStore,
         issues,
         issueWithIds
@@ -49,7 +48,6 @@ export const CalendarLayout: React.FC = observer(() => {
     <BaseCalendarRoot
       issueStore={issueStore}
       issuesFilterStore={projectIssueFiltersStore}
-      calendarViewStore={issueCalendarViewStore}
       QuickActions={ProjectIssueQuickActions}
       issueActions={issueActions}
       handleDragDrop={handleDragDrop}

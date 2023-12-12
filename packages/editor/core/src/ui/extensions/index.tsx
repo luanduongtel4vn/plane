@@ -20,12 +20,9 @@ import { Mentions } from "../mentions";
 
 import { CustomKeymap } from "./keymap";
 import { CustomCodeBlock } from "./code";
+import { CustomQuoteExtension } from "./quote";
 import { ListKeymap } from "./custom-list-keymap";
-import {
-  IMentionSuggestion,
-  DeleteImage,
-  RestoreImage,
-} from "@plane/editor-types";
+import { IMentionSuggestion, DeleteImage, RestoreImage } from "@plane/editor-types";
 
 export const CoreEditorExtensions = (
   mentionConfig: {
@@ -34,7 +31,7 @@ export const CoreEditorExtensions = (
   },
   deleteFile: DeleteImage,
   restoreFile: RestoreImage,
-  cancelUploadImage?: () => any,
+  cancelUploadImage?: () => any
 ) => [
   StarterKit.configure({
     bulletList: {
@@ -52,11 +49,11 @@ export const CoreEditorExtensions = (
         class: "leading-normal -mb-2",
       },
     },
-    blockquote: {
-      HTMLAttributes: {
-        class: "border-l-4 border-custom-border-300",
-      },
-    },
+    // blockquote: {
+    //   HTMLAttributes: {
+    //     class: "border-l-4 border-custom-border-300",
+    //   },
+    // },
     code: false,
     codeBlock: false,
     horizontalRule: false,
@@ -64,6 +61,9 @@ export const CoreEditorExtensions = (
       color: "rgba(var(--color-text-100))",
       width: 2,
     },
+  }),
+  CustomQuoteExtension.configure({
+    HTMLAttributes: { className: "border-l-4 border-custom-border-300" },
   }),
   CustomKeymap,
   ListKeymap,
@@ -105,9 +105,5 @@ export const CoreEditorExtensions = (
   TableHeader,
   TableCell,
   TableRow,
-  Mentions(
-    mentionConfig.mentionSuggestions,
-    mentionConfig.mentionHighlights,
-    false,
-  ),
+  Mentions(mentionConfig.mentionSuggestions, mentionConfig.mentionHighlights, false),
 ];

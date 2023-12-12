@@ -1,11 +1,10 @@
 import { Editor } from "@tiptap/react";
+import { useState } from "react";
 import Moveable from "react-moveable";
 
 export const ImageResizer = ({ editor }: { editor: Editor }) => {
   const updateMediaSize = () => {
-    const imageInfo = document.querySelector(
-      ".ProseMirror-selectednode",
-    ) as HTMLImageElement;
+    const imageInfo = document.querySelector(".ProseMirror-selectednode") as HTMLImageElement;
     if (imageInfo) {
       const selection = editor.state.selection;
       editor.commands.setImage({
@@ -16,6 +15,8 @@ export const ImageResizer = ({ editor }: { editor: Editor }) => {
       editor.commands.setNodeSelection(selection.from);
     }
   };
+
+  const [aspectRatio, setAspectRatio] = useState(1);
 
   return (
     <>
@@ -28,9 +29,27 @@ export const ImageResizer = ({ editor }: { editor: Editor }) => {
         keepRatio
         resizable
         throttleResize={0}
+        onResizeStart={() => {
+          const imageInfo = document.querySelector(".ProseMirror-selectednode") as HTMLImageElement;
+          if (imageInfo) {
+            const originalWidth = Number(imageInfo.width);
+            const originalHeight = Number(imageInfo.height);
+            setAspectRatio(originalWidth / originalHeight);
+          }
+        }}
         onResize={({ target, width, height, delta }: any) => {
-          delta[0] && (target!.style.width = `${width}px`);
-          delta[1] && (target!.style.height = `${height}px`);
+          if (delta[0]) {
+            const newWidth = Math.max(width, 100);
+            const newHeight = newWidth / aspectRatio;
+            target!.style.width = `${newWidth}px`;
+            target!.style.height = `${newHeight}px`;
+          }
+          if (delta[1]) {
+            const newHeight = Math.max(height, 100);
+            const newWidth = newHeight * aspectRatio;
+            target!.style.height = `${newHeight}px`;
+            target!.style.width = `${newWidth}px`;
+          }
         }}
         onResizeEnd={() => {
           updateMediaSize();

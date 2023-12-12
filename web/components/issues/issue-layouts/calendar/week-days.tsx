@@ -1,7 +1,4 @@
 import { observer } from "mobx-react-lite";
-
-// mobx store
-import { useMobxStore } from "lib/mobx/store-provider";
 // components
 import { CalendarDayTile } from "components/issues";
 // helpers
@@ -10,13 +7,25 @@ import { renderDateFormat } from "helpers/date-time.helper";
 import { ICalendarDate, ICalendarWeek } from "./types";
 import { IIssue } from "types";
 import { IGroupedIssues, IIssueResponse } from "store/issues/types";
+import {
+  ICycleIssuesFilterStore,
+  IModuleIssuesFilterStore,
+  IProjectIssuesFilterStore,
+  IViewIssuesFilterStore,
+} from "store/issues";
 
 type Props = {
+  issuesFilterStore:
+    | IProjectIssuesFilterStore
+    | IModuleIssuesFilterStore
+    | ICycleIssuesFilterStore
+    | IViewIssuesFilterStore;
   issues: IIssueResponse | undefined;
   groupedIssueIds: IGroupedIssues;
   week: ICalendarWeek | undefined;
-  quickActions: (issue: IIssue) => React.ReactNode;
+  quickActions: (issue: IIssue, customActionButton?: React.ReactElement) => React.ReactNode;
   enableQuickIssueCreate?: boolean;
+  disableIssueCreation?: boolean;
   quickAddCallback?: (
     workspaceSlug: string,
     projectId: string,
@@ -27,12 +36,20 @@ type Props = {
 };
 
 export const CalendarWeekDays: React.FC<Props> = observer((props) => {
-  const { issues, groupedIssueIds, week, quickActions, enableQuickIssueCreate, quickAddCallback, viewId } = props;
+  const {
+    issuesFilterStore,
+    issues,
+    groupedIssueIds,
+    week,
+    quickActions,
+    enableQuickIssueCreate,
+    disableIssueCreation,
+    quickAddCallback,
+    viewId,
+  } = props;
 
-  const { issueFilter: issueFilterStore } = useMobxStore();
-
-  const calendarLayout = issueFilterStore.userDisplayFilters.calendar?.layout ?? "month";
-  const showWeekends = issueFilterStore.userDisplayFilters.calendar?.show_weekends ?? false;
+  const calendarLayout = issuesFilterStore?.issueFilters?.displayFilters?.calendar?.layout ?? "month";
+  const showWeekends = issuesFilterStore?.issueFilters?.displayFilters?.calendar?.show_weekends ?? false;
 
   if (!week) return null;
 
@@ -47,12 +64,14 @@ export const CalendarWeekDays: React.FC<Props> = observer((props) => {
 
         return (
           <CalendarDayTile
+            issuesFilterStore={issuesFilterStore}
             key={renderDateFormat(date.date)}
             date={date}
             issues={issues}
             groupedIssueIds={groupedIssueIds}
             quickActions={quickActions}
             enableQuickIssueCreate={enableQuickIssueCreate}
+            disableIssueCreation={disableIssueCreation}
             quickAddCallback={quickAddCallback}
             viewId={viewId}
           />

@@ -81,11 +81,11 @@ export const IssueDetailsSidebar: React.FC<Props> = observer((props) => {
   const [selectedLinkToUpdate, setSelectedLinkToUpdate] = useState<ILinkDetails | null>(null);
 
   const {
-    user: userStore,
+    user: { currentUser, currentProjectRole },
     projectState: { states },
+    projectIssues: { removeIssue },
+    issueDetail: { createIssueLink, updateIssueLink, deleteIssueLink },
   } = useMobxStore();
-  const user = userStore.currentUser;
-  const userRole = userStore.currentProjectRole;
 
   const router = useRouter();
   const { workspaceSlug, projectId, issueId, inboxIssueId } = router.query;
@@ -102,7 +102,7 @@ export const IssueDetailsSidebar: React.FC<Props> = observer((props) => {
 
   const handleCycleChange = useCallback(
     (cycleId: string) => {
-      if (!workspaceSlug || !projectId || !issueDetail || !user) return;
+      if (!workspaceSlug || !projectId || !issueDetail || !currentUser) return;
 
       issueService
         .addIssueToCycle(workspaceSlug as string, projectId as string, cycleId, {
@@ -112,12 +112,12 @@ export const IssueDetailsSidebar: React.FC<Props> = observer((props) => {
           mutate(ISSUE_DETAILS(issueId as string));
         });
     },
-    [workspaceSlug, projectId, issueId, issueDetail, user]
+    [workspaceSlug, projectId, issueId, issueDetail, currentUser]
   );
 
   const handleModuleChange = useCallback(
     (moduleId: string) => {
-      if (!workspaceSlug || !projectId || !issueDetail || !user) return;
+      if (!workspaceSlug || !projectId || !issueDetail || !currentUser) return;
 
       moduleService
         .addIssuesToModule(workspaceSlug as string, projectId as string, moduleId, {
@@ -127,83 +127,22 @@ export const IssueDetailsSidebar: React.FC<Props> = observer((props) => {
           mutate(ISSUE_DETAILS(issueId as string));
         });
     },
-    [workspaceSlug, projectId, issueId, issueDetail, user]
+    [workspaceSlug, projectId, issueId, issueDetail, currentUser]
   );
 
-  const handleCreateLink = async (formData: IIssueLink) => {
-    if (!workspaceSlug || !projectId || !issueDetail) return;
-
-    const payload = { metadata: {}, ...formData };
-
-    await issueService
-      .createIssueLink(workspaceSlug as string, projectId as string, issueDetail.id, payload)
-      .then(() => mutate(ISSUE_DETAILS(issueDetail.id)))
-      .catch((err) => {
-        if (err.status === 400)
-          setToastAlert({
-            type: "error",
-            title: "Error!",
-            message: "This URL already exists for this issue.",
-          });
-        else
-          setToastAlert({
-            type: "error",
-            title: "Error!",
-            message: "Something went wrong. Please try again.",
-          });
-      });
+  const issueLinkCreate = (formData: IIssueLink) => {
+    if (!workspaceSlug || !projectId || !issueId) return;
+    createIssueLink(workspaceSlug.toString(), projectId.toString(), issueId.toString(), formData);
   };
 
-  const handleUpdateLink = async (formData: IIssueLink, linkId: string) => {
-    if (!workspaceSlug || !projectId || !issueDetail) return;
-
-    const payload = { metadata: {}, ...formData };
-
-    const updatedLinks = issueDetail.issue_link.map((l) =>
-      l.id === linkId
-        ? {
-            ...l,
-            title: formData.title,
-            url: formData.url,
-          }
-        : l
-    );
-
-    mutate<IIssue>(
-      ISSUE_DETAILS(issueDetail.id),
-      (prevData) => ({ ...(prevData as IIssue), issue_link: updatedLinks }),
-      false
-    );
-
-    await issueService
-      .updateIssueLink(workspaceSlug as string, projectId as string, issueDetail.id, linkId, payload)
-      .then(() => {
-        mutate(ISSUE_DETAILS(issueDetail.id));
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+  const issueLinkUpdate = (formData: IIssueLink, linkId: string) => {
+    if (!workspaceSlug || !projectId || !issueId) return;
+    updateIssueLink(workspaceSlug.toString(), projectId.toString(), issueId.toString(), linkId, formData);
   };
 
-  const handleDeleteLink = async (linkId: string) => {
-    if (!workspaceSlug || !projectId || !issueDetail) return;
-
-    const updatedLinks = issueDetail.issue_link.filter((l) => l.id !== linkId);
-
-    mutate<IIssue>(
-      ISSUE_DETAILS(issueDetail.id),
-      (prevData) => ({ ...(prevData as IIssue), issue_link: updatedLinks }),
-      false
-    );
-
-    await issueService
-      .deleteIssueLink(workspaceSlug as string, projectId as string, issueDetail.id, linkId)
-      .then(() => {
-        mutate(ISSUE_DETAILS(issueDetail.id));
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+  const issueLinkDelete = (linkId: string) => {
+    if (!workspaceSlug || !projectId || !issueId) return;
+    deleteIssueLink(workspaceSlug.toString(), projectId.toString(), issueId.toString(), linkId);
   };
 
   const handleCopyText = () => {
@@ -249,7 +188,7 @@ export const IssueDetailsSidebar: React.FC<Props> = observer((props) => {
     setLinkModal(true);
   };
 
-  const isAllowed = !!userRole && userRole >= EUserWorkspaceRoles.MEMBER;
+  const isAllowed = !!currentProjectRole && currentProjectRole >= EUserWorkspaceRoles.MEMBER;
 
   const currentIssueState = projectId
     ? states[projectId.toString()]?.find((s) => s.id === issueDetail?.state)
@@ -265,13 +204,21 @@ export const IssueDetailsSidebar: React.FC<Props> = observer((props) => {
         }}
         data={selectedLinkToUpdate}
         status={selectedLinkToUpdate ? true : false}
-        createIssueLink={handleCreateLink}
-        updateIssueLink={handleUpdateLink}
+        createIssueLink={issueLinkCreate}
+        updateIssueLink={issueLinkUpdate}
       />
-      {issueDetail && (
-        <DeleteIssueModal handleClose={() => setDeleteIssueModal(false)} isOpen={deleteIssueModal} data={issueDetail} />
+      {workspaceSlug && projectId && issueDetail && (
+        <DeleteIssueModal
+          handleClose={() => setDeleteIssueModal(false)}
+          isOpen={deleteIssueModal}
+          data={issueDetail}
+          onSubmit={async () => {
+            await removeIssue(workspaceSlug.toString(), projectId.toString(), issueDetail.id);
+            router.push(`/${workspaceSlug}/projects/${projectId}/issues`);
+          }}
+        />
       )}
-      <div className="h-full w-full flex flex-col divide-y-2 divide-custom-border-200 overflow-hidden">
+      <div className="flex h-full w-full flex-col divide-y-2 divide-custom-border-200 overflow-hidden">
         <div className="flex items-center justify-between px-5 pb-3">
           <div className="flex items-center gap-x-2">
             {currentIssueState ? (
@@ -283,13 +230,13 @@ export const IssueDetailsSidebar: React.FC<Props> = observer((props) => {
             ) : inboxIssueId ? (
               <StateGroupIcon className="h-4 w-4" stateGroup="backlog" color="#ff7700" />
             ) : null}
-            <h4 className="text-lg text-custom-text-300 font-medium">
+            <h4 className="text-lg font-medium text-custom-text-300">
               {issueDetail?.project_detail?.identifier}-{issueDetail?.sequence_id}
             </h4>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {issueDetail?.created_by !== user?.id &&
-              !issueDetail?.assignees.includes(user?.id ?? "") &&
+            {issueDetail?.created_by !== currentUser?.id &&
+              !issueDetail?.assignees.includes(currentUser?.id ?? "") &&
               !router.pathname.includes("[archivedIssueId]") &&
               (fieldsToShow.includes("all") || fieldsToShow.includes("subscribe")) && (
                 <Button
@@ -326,7 +273,7 @@ export const IssueDetailsSidebar: React.FC<Props> = observer((props) => {
           </div>
         </div>
 
-        <div className="h-full w-full px-5 overflow-y-auto">
+        <div className="h-full w-full overflow-y-auto px-5">
           <div className={`divide-y-2 divide-custom-border-200 ${uneditable ? "opacity-60" : ""}`}>
             {showFirstSection && (
               <div className="py-1">
@@ -539,7 +486,7 @@ export const IssueDetailsSidebar: React.FC<Props> = observer((props) => {
                                 start_date: val,
                               })
                             }
-                            className="bg-custom-background-80 border-none"
+                            className="border-none bg-custom-background-80"
                             maxDate={maxDate ?? undefined}
                             disabled={!isAllowed || uneditable}
                           />
@@ -567,7 +514,7 @@ export const IssueDetailsSidebar: React.FC<Props> = observer((props) => {
                                 target_date: val,
                               })
                             }
-                            className="bg-custom-background-80 border-none"
+                            className="border-none bg-custom-background-80"
                             minDate={minDate ?? undefined}
                             disabled={!isAllowed || uneditable}
                           />
@@ -631,7 +578,7 @@ export const IssueDetailsSidebar: React.FC<Props> = observer((props) => {
             </div>
           )}
           {(fieldsToShow.includes("all") || fieldsToShow.includes("link")) && (
-            <div className={`min-h-[116px] py-1 text-xs ${uneditable ? "opacity-60" : ""}`}>
+            <div className={`py-1 text-xs ${uneditable ? "opacity-60" : ""}`}>
               <div className="flex items-center justify-between gap-2">
                 <h4>Links</h4>
                 {isAllowed && (
@@ -647,21 +594,23 @@ export const IssueDetailsSidebar: React.FC<Props> = observer((props) => {
                   </button>
                 )}
               </div>
-              <div className="mt-2 space-y-2">
-                {issueDetail?.issue_link && issueDetail.issue_link.length > 0 ? (
-                  <LinksList
-                    links={issueDetail.issue_link}
-                    handleDeleteLink={handleDeleteLink}
-                    handleEditLink={handleEditLink}
-                    userAuth={{
-                      isGuest: userRole === 5,
-                      isViewer: userRole === 10,
-                      isMember: userRole === 15,
-                      isOwner: userRole === 20,
-                    }}
-                  />
-                ) : null}
-              </div>
+              {issueDetail?.issue_link && issueDetail.issue_link.length > 0 && (
+                <div className="mt-2 space-y-2">
+                  {
+                    <LinksList
+                      links={issueDetail.issue_link}
+                      handleDeleteLink={issueLinkDelete}
+                      handleEditLink={handleEditLink}
+                      userAuth={{
+                        isGuest: currentProjectRole === 5,
+                        isViewer: currentProjectRole === 10,
+                        isMember: currentProjectRole === 15,
+                        isOwner: currentProjectRole === 20,
+                      }}
+                    />
+                  }
+                </div>
+              )}
             </div>
           )}
         </div>

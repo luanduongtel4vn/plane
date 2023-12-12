@@ -1,19 +1,9 @@
 "use client";
 import * as React from "react";
-import {
-  EditorContainer,
-  EditorContentWrapper,
-  getEditorClassNames,
-  useEditor,
-} from "@plane/editor-core";
+import { EditorContainer, EditorContentWrapper, getEditorClassNames, useEditor } from "@plane/editor-core";
 import { EditorBubbleMenu } from "./menus/bubble-menu";
 import { RichTextEditorExtensions } from "./extensions";
-import {
-  DeleteImage,
-  IMentionSuggestion,
-  RestoreImage,
-  UploadImage,
-} from "@plane/editor-types";
+import { DeleteImage, IMentionSuggestion, RestoreImage, UploadImage } from "@plane/editor-types";
 
 export type IRichTextEditor = {
   value: string;
@@ -24,12 +14,14 @@ export type IRichTextEditor = {
   noBorder?: boolean;
   borderOnFocus?: boolean;
   cancelUploadImage?: () => any;
+  rerenderOnPropsChange?: {
+    id: string;
+    description_html: string;
+  };
   customClassName?: string;
   editorContentCustomClassNames?: string;
   onChange?: (json: any, html: string) => void;
-  setIsSubmitting?: (
-    isSubmitting: "submitting" | "submitted" | "saved",
-  ) => void;
+  setIsSubmitting?: (isSubmitting: "submitting" | "submitted" | "saved") => void;
   setShouldShowAlert?: (showAlert: boolean) => void;
   forwardedRef?: any;
   debouncedUpdatesEnabled?: boolean;
@@ -63,6 +55,7 @@ const RichTextEditor = ({
   restoreFile,
   forwardedRef,
   mentionHighlights,
+  rerenderOnPropsChange,
   mentionSuggestions,
 }: RichTextEditorProps) => {
   const editor = useEditor({
@@ -76,11 +69,8 @@ const RichTextEditor = ({
     deleteFile,
     restoreFile,
     forwardedRef,
-    extensions: RichTextEditorExtensions(
-      uploadFile,
-      setIsSubmitting,
-      dragDropEnabled,
-    ),
+    rerenderOnPropsChange,
+    extensions: RichTextEditorExtensions(uploadFile, setIsSubmitting, dragDropEnabled),
     mentionHighlights,
     mentionSuggestions,
   });
@@ -97,18 +87,15 @@ const RichTextEditor = ({
     <EditorContainer editor={editor} editorClassNames={editorClassNames}>
       {editor && <EditorBubbleMenu editor={editor} />}
       <div className="flex flex-col">
-        <EditorContentWrapper
-          editor={editor}
-          editorContentCustomClassNames={editorContentCustomClassNames}
-        />
+        <EditorContentWrapper editor={editor} editorContentCustomClassNames={editorContentCustomClassNames} />
       </div>
     </EditorContainer>
   );
 };
 
-const RichTextEditorWithRef = React.forwardRef<EditorHandle, IRichTextEditor>(
-  (props, ref) => <RichTextEditor {...props} forwardedRef={ref} />,
-);
+const RichTextEditorWithRef = React.forwardRef<EditorHandle, IRichTextEditor>((props, ref) => (
+  <RichTextEditor {...props} forwardedRef={ref} />
+));
 
 RichTextEditorWithRef.displayName = "RichTextEditorWithRef";
 

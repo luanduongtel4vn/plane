@@ -1,7 +1,7 @@
 import { action, computed, observable, makeObservable, runInAction } from "mobx";
 import { RootStore } from "../root";
 // types
-import { IWorkspaceMember, IWorkspaceMemberInvitation, IWorkspaceBulkInviteFormData } from "types";
+import { IWorkspaceMember, IWorkspaceMemberInvitation, IWorkspaceBulkInviteFormData, IUserProjectsRole } from "types";
 // services
 import { WorkspaceService } from "services/workspace.service";
 
@@ -13,17 +13,25 @@ export interface IWorkspaceMemberStore {
   // observables
   members: { [workspaceSlug: string]: IWorkspaceMember[] }; // workspaceSlug: members[]
   memberInvitations: { [workspaceSlug: string]: IWorkspaceMemberInvitation[] };
+  workspaceUserProjectsRole: { [workspaceSlug: string]: IUserProjectsRole } | undefined;
   // actions
+  fetchWorkspaceUserProjectsRole: (workspaceSlug: string) => Promise<IUserProjectsRole>;
   fetchWorkspaceMembers: (workspaceSlug: string) => Promise<void>;
   fetchWorkspaceMemberInvitations: (workspaceSlug: string) => Promise<IWorkspaceMemberInvitation[]>;
   updateMember: (workspaceSlug: string, memberId: string, data: Partial<IWorkspaceMember>) => Promise<void>;
   removeMember: (workspaceSlug: string, memberId: string) => Promise<void>;
   inviteMembersToWorkspace: (workspaceSlug: string, data: IWorkspaceBulkInviteFormData) => Promise<any>;
+  updateMemberInvitation: (
+    workspaceSlug: string,
+    memberId: string,
+    data: Partial<IWorkspaceMemberInvitation>
+  ) => Promise<void>;
   deleteWorkspaceInvitation: (workspaceSlug: string, memberId: string) => Promise<void>;
   // computed
   workspaceMembers: IWorkspaceMember[] | null;
   workspaceMemberInvitations: IWorkspaceMemberInvitation[] | null;
   workspaceMembersWithInvitations: any[] | null;
+  currentWorkspaceUserProjectsRole: IUserProjectsRole | undefined;
 }
 
 export class WorkspaceMemberStore implements IWorkspaceMemberStore {
@@ -33,6 +41,7 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
   // observables
   members: { [workspaceSlug: string]: IWorkspaceMember[] } = {};
   memberInvitations: { [workspaceSlug: string]: IWorkspaceMemberInvitation[] } = {};
+  workspaceUserProjectsRole: { [workspaceSlug: string]: IUserProjectsRole } | undefined = undefined;
   // services
   workspaceService;
   // root store
@@ -47,17 +56,21 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
       // observables
       members: observable.ref,
       memberInvitations: observable.ref,
+      workspaceUserProjectsRole: observable.ref,
       // actions
+      fetchWorkspaceUserProjectsRole: action,
       fetchWorkspaceMembers: action,
       fetchWorkspaceMemberInvitations: action,
       updateMember: action,
       removeMember: action,
       inviteMembersToWorkspace: action,
+      updateMemberInvitation: action,
       deleteWorkspaceInvitation: action,
       // computed
       workspaceMembers: computed,
       workspaceMemberInvitations: computed,
       workspaceMembersWithInvitations: computed,
+      currentWorkspaceUserProjectsRole: computed,
     });
 
     this.rootStore = _rootStore;
@@ -121,6 +134,36 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
   }
 
   /**
+   * computed value provides the workspace user projects role
+   */
+  get currentWorkspaceUserProjectsRole() {
+    if (!this.rootStore.workspace.workspaceSlug) return undefined;
+
+    return this.workspaceUserProjectsRole?.[this.rootStore.workspace.workspaceSlug];
+  }
+
+  /**
+   * fetch workspace user projects role using workspace slug
+   * @param workspaceSlug
+   */
+  fetchWorkspaceUserProjectsRole = async (workspaceSlug: string) => {
+    try {
+      const _workspaceUserProjectsRole = { ...this.workspaceUserProjectsRole };
+      if (!_workspaceUserProjectsRole[workspaceSlug]) _workspaceUserProjectsRole[workspaceSlug] = {};
+
+      const response = await this.workspaceService.getWorkspaceUserProjectsRole(workspaceSlug);
+      _workspaceUserProjectsRole[workspaceSlug] = response;
+
+      runInAction(() => {
+        this.workspaceUserProjectsRole = _workspaceUserProjectsRole;
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  /**
    * fetch workspace members using workspace slug
    * @param workspaceSlug
    */
@@ -179,6 +222,55 @@ export class WorkspaceMemberStore implements IWorkspaceMemberStore {
       await this.workspaceService.inviteWorkspace(workspaceSlug, data);
       await this.fetchWorkspaceMemberInvitations(workspaceSlug);
     } catch (error) {
+      throw error;
+    }
+  };
+
+  /**
+   * update workspace member invitation using workspace slug and member id and data
+   * @param workspaceSlug
+   * @param memberId
+   * @param data
+   */
+  updateMemberInvitation = async (
+    workspaceSlug: string,
+    memberId: string,
+    data: Partial<IWorkspaceMemberInvitation>
+  ) => {
+    const originalMemberInvitations = [...this.memberInvitations?.[workspaceSlug]]; // in case of error, we will revert back to original members
+
+    const memberInvitations = [...this.memberInvitations?.[workspaceSlug]];
+
+    const index = memberInvitations.findIndex((m) => m.id === memberId);
+    memberInvitations[index] = { ...memberInvitations[index], ...data };
+
+    // optimistic update
+    runInAction(() => {
+      this.loader = true;
+      this.error = null;
+      this.memberInvitations = {
+        ...this.memberInvitations,
+        [workspaceSlug]: memberInvitations,
+      };
+    });
+
+    try {
+      await this.workspaceService.updateWorkspaceInvitation(workspaceSlug, memberId, data);
+
+      runInAction(() => {
+        this.loader = false;
+        this.error = null;
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.loader = false;
+        this.error = error;
+        this.memberInvitations = {
+          ...this.memberInvitations,
+          [workspaceSlug]: originalMemberInvitations,
+        };
+      });
+
       throw error;
     }
   };

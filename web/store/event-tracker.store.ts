@@ -7,8 +7,8 @@ export interface ITrackEventStore {
   setTrackElement: (element: string) => void;
   postHogEventTracker: (
     eventName: string,
-    payload: object | [] | null
-    // group: { isGrouping: boolean; groupType: string; gorupId: string } | null
+    payload: object | [] | null,
+    group?: { isGrouping: boolean | null; groupType: string | null; gorupId: string | null } | null
   ) => void;
 }
 
@@ -30,11 +30,10 @@ export class TrackEventStore implements ITrackEventStore {
 
   postHogEventTracker = (
     eventName: string,
-    payload: object | [] | null
-    // group: { isGrouping: boolean; groupType: string; gorupId: string } | null
+    payload: object | [] | null,
+    group?: { isGrouping: boolean | null; groupType: string | null; gorupId: string | null } | null
   ) => {
     try {
-      console.log("POSTHOG_EVENT: ", eventName);
       let extras: any = {
         workspace_name: this.rootStore.workspace.currentWorkspace?.name ?? "",
         workspace_id: this.rootStore.workspace.currentWorkspace?.id ?? "",
@@ -43,7 +42,7 @@ export class TrackEventStore implements ITrackEventStore {
         project_id: this.rootStore.project.currentProjectDetails?.id ?? "",
         project_identifier: this.rootStore.project.currentProjectDetails?.identifier ?? "",
       };
-      if (["PROJECT_CREATE", "PROJECT_UPDATE"].includes(eventName)) {
+      if (["PROJECT_CREATED", "PROJECT_UPDATED"].includes(eventName)) {
         const project_details: any = payload as object;
         extras = {
           ...extras,
@@ -53,27 +52,25 @@ export class TrackEventStore implements ITrackEventStore {
         };
       }
 
-      // if (group!.isGrouping === true) {
-      //     posthog?.group(group!.groupType, group!.gorupId, {
-      //       name: "PostHog",
-      //       subscription: "subscription",
-      //       date_joined: "2020-01-23T00:00:00.000Z",
-      //     });
-      //   console.log("END OF GROUPING");
-      //   posthog?.capture(eventName, {
-      //     ...payload,
-      //     element: this.trackElement ?? "",
-      //   });
-      // } else {
-      posthog?.capture(eventName, {
-        ...payload,
-        extras: extras,
-        element: this.trackElement ?? "",
-      });
-      // }
-      console.log(payload);
+      if (group && group!.isGrouping === true) {
+        posthog?.group(group!.groupType!, group!.gorupId!, {
+          date: new Date(),
+          workspace_id: group!.gorupId,
+        });
+        posthog?.capture(eventName, {
+          ...payload,
+          extras: extras,
+          element: this.trackElement ?? "",
+        });
+      } else {
+        posthog?.capture(eventName, {
+          ...payload,
+          extras: extras,
+          element: this.trackElement ?? "",
+        });
+      }
     } catch (error) {
-      console.log(error);
+      throw error;
     }
     this.setTrackElement("");
   };

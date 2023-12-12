@@ -11,6 +11,7 @@ from .project import (
     ProjectFavoritesViewSet,
     ProjectPublicCoverImagesEndpoint,
     ProjectDeployBoardViewSet,
+    UserProjectRolesEndpoint,
 )
 from .user import (
     UserEndpoint,
@@ -87,6 +88,7 @@ from .auth_extended import (
     ChangePasswordEndpoint,
     SetUserPasswordEndpoint,
     EmailCheckEndpoint,
+    MagicGenerateEndpoint,
 )
 
 
@@ -129,7 +131,6 @@ from .page import (
     PageFavoriteViewSet,
     PageLogEndpoint,
     SubPagesEndpoint,
-    CreateIssueFromBlockEndpoint,
 )
 
 from .search import GlobalSearchEndpoint, IssueSearchEndpoint

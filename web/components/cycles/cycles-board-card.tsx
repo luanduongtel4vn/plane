@@ -23,6 +23,7 @@ import { ICycle } from "types";
 import { useMobxStore } from "lib/mobx/store-provider";
 // constants
 import { CYCLE_STATUS } from "constants/cycle";
+import { EUserWorkspaceRoles } from "constants/workspace";
 
 export interface ICyclesBoardCard {
   workspaceSlug: string;
@@ -36,6 +37,7 @@ export const CyclesBoardCard: FC<ICyclesBoardCard> = (props) => {
   const {
     cycle: cycleStore,
     trackEvent: { setTrackElement },
+    user: userStore,
   } = useMobxStore();
   // toast
   const { setToastAlert } = useToast();
@@ -48,6 +50,9 @@ export const CyclesBoardCard: FC<ICyclesBoardCard> = (props) => {
   const endDate = new Date(cycle.end_date ?? "");
   const startDate = new Date(cycle.start_date ?? "");
   const isDateValid = cycle.start_date || cycle.end_date;
+
+  const { currentProjectRole } = userStore;
+  const isEditingAllowed = !!currentProjectRole && currentProjectRole >= EUserWorkspaceRoles.MEMBER;
 
   const router = useRouter();
 
@@ -155,20 +160,20 @@ export const CyclesBoardCard: FC<ICyclesBoardCard> = (props) => {
       />
 
       <Link href={`/${workspaceSlug}/projects/${projectId}/cycles/${cycle.id}`}>
-        <div className="flex flex-col justify-between p-4 h-44 w-full min-w-[250px]  text-sm rounded bg-custom-background-100 border border-custom-border-100 hover:shadow-md">
+        <div className="flex h-44 w-full min-w-[250px] flex-col justify-between rounded  border border-custom-border-100 bg-custom-background-100 p-4 text-sm hover:shadow-md">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 truncate">
               <span className="flex-shrink-0">
                 <CycleGroupIcon cycleGroup={cycleStatus} className="h-3.5 w-3.5" />
               </span>
               <Tooltip tooltipContent={cycle.name} position="top">
-                <span className="text-base font-medium truncate">{cycle.name}</span>
+                <span className="truncate text-base font-medium">{cycle.name}</span>
               </Tooltip>
             </div>
             <div className="flex items-center gap-2">
               {currentCycle && (
                 <span
-                  className="flex items-center justify-center text-xs text-center h-6 w-20 rounded-sm"
+                  className="flex h-6 w-20 items-center justify-center rounded-sm text-center text-xs"
                   style={{
                     color: currentCycle.color,
                     backgroundColor: `${currentCycle.color}20`,
@@ -193,7 +198,7 @@ export const CyclesBoardCard: FC<ICyclesBoardCard> = (props) => {
               </div>
               {cycle.assignees.length > 0 && (
                 <Tooltip tooltipContent={`${cycle.assignees.length} Members`}>
-                  <div className="flex items-center gap-1 cursor-default">
+                  <div className="flex cursor-default items-center gap-1">
                     <AvatarGroup showTooltip={false}>
                       {cycle.assignees.map((assignee) => (
                         <Avatar key={assignee.id} name={assignee.display_name} src={assignee.avatar} />
@@ -208,7 +213,7 @@ export const CyclesBoardCard: FC<ICyclesBoardCard> = (props) => {
               tooltipContent={isNaN(completionPercentage) ? "0" : `${completionPercentage.toFixed(0)}%`}
               position="top-left"
             >
-              <div className="flex items-center w-full">
+              <div className="flex w-full items-center">
                 <div
                   className="bar relative h-1.5 w-full rounded bg-custom-background-90"
                   style={{
@@ -216,7 +221,7 @@ export const CyclesBoardCard: FC<ICyclesBoardCard> = (props) => {
                   }}
                 >
                   <div
-                    className="absolute top-0 left-0 h-1.5 rounded bg-blue-600 duration-300"
+                    className="absolute left-0 top-0 h-1.5 rounded bg-blue-600 duration-300"
                     style={{
                       width: `${isNaN(completionPercentage) ? 0 : completionPercentage.toFixed(0)}%`,
                     }}
@@ -234,18 +239,19 @@ export const CyclesBoardCard: FC<ICyclesBoardCard> = (props) => {
               ) : (
                 <span className="text-xs text-custom-text-400">No due date</span>
               )}
-              <div className="flex items-center gap-1.5 z-10">
-                {cycle.is_favorite ? (
-                  <button type="button" onClick={handleRemoveFromFavorites}>
-                    <Star className="h-3.5 w-3.5 text-amber-500 fill-current" />
-                  </button>
-                ) : (
-                  <button type="button" onClick={handleAddToFavorites}>
-                    <Star className="h-3.5 w-3.5 text-custom-text-200" />
-                  </button>
-                )}
+              <div className="z-10 flex items-center gap-1.5">
+                {isEditingAllowed &&
+                  (cycle.is_favorite ? (
+                    <button type="button" onClick={handleRemoveFromFavorites}>
+                      <Star className="h-3.5 w-3.5 fill-current text-amber-500" />
+                    </button>
+                  ) : (
+                    <button type="button" onClick={handleAddToFavorites}>
+                      <Star className="h-3.5 w-3.5 text-custom-text-200" />
+                    </button>
+                  ))}
                 <CustomMenu width="auto" ellipsis className="z-10">
-                  {!isCompleted && (
+                  {!isCompleted && isEditingAllowed && (
                     <>
                       <CustomMenu.MenuItem onClick={handleEditCycle}>
                         <span className="flex items-center justify-start gap-2">

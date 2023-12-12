@@ -13,6 +13,7 @@ import {
   IProductUpdateResponse,
   IWorkspaceBulkInviteFormData,
   IWorkspaceViewProps,
+  IUserProjectsRole,
 } from "types";
 import { IWorkspaceView } from "types/workspace-views";
 // store
@@ -166,6 +167,18 @@ export class WorkspaceService extends APIService {
       });
   }
 
+  async updateWorkspaceInvitation(
+    workspaceSlug: string,
+    invitationId: string,
+    data: Partial<IWorkspaceMember>
+  ): Promise<any> {
+    return this.patch(`/api/workspaces/${workspaceSlug}/invitations/${invitationId}/`, data)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
   async deleteWorkspaceInvitations(workspaceSlug: string, invitationId: string): Promise<any> {
     return this.delete(`/api/workspaces/${workspaceSlug}/invitations/${invitationId}/`)
       .then((response) => response?.data)
@@ -250,6 +263,14 @@ export class WorkspaceService extends APIService {
     return this.get(`/api/workspaces/${workspaceSlug}/issues/`, {
       params,
     })
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getWorkspaceUserProjectsRole(workspaceSlug: string): Promise<IUserProjectsRole> {
+    return this.get(`/api/users/me/workspaces/${workspaceSlug}/project-roles/`)
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;

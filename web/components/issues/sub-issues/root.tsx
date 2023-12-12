@@ -45,11 +45,10 @@ export const SubIssuesRoot: React.FC<ISubIssuesRoot> = observer((props) => {
   const { parentIssue, user } = props;
 
   const {
-    user: userStore,
+    user: { currentProjectRole },
     issue: { updateIssueStructure },
-    projectIssues: { updateIssue },
+    projectIssues: { updateIssue, removeIssue },
   } = useMobxStore();
-  const userRole = userStore.currentProjectRole;
 
   const router = useRouter();
   const { workspaceSlug, projectId } = router.query;
@@ -177,16 +176,16 @@ export const SubIssuesRoot: React.FC<ISubIssuesRoot> = observer((props) => {
     [updateIssueStructure, projectId, updateIssue, user, workspaceSlug]
   );
 
-  const isEditable = !!userRole && userRole >= EUserWorkspaceRoles.MEMBER;
+  const isEditable = !!currentProjectRole && currentProjectRole >= EUserWorkspaceRoles.MEMBER;
 
   const mutateSubIssues = (parentIssueId: string | null) => {
     if (parentIssueId) mutate(SUB_ISSUES(parentIssueId));
   };
 
   return (
-    <div className="w-full h-full space-y-2">
+    <div className="h-full w-full space-y-2">
       {!issues && isLoading ? (
-        <div className="py-3 text-center text-sm  text-custom-text-300 font-medium">Loading...</div>
+        <div className="py-3 text-center text-sm  font-medium text-custom-text-300">Loading...</div>
       ) : (
         <>
           {issues && issues?.sub_issues && issues?.sub_issues?.length > 0 ? (
@@ -194,10 +193,10 @@ export const SubIssuesRoot: React.FC<ISubIssuesRoot> = observer((props) => {
               {/* header */}
               <div className="relative flex items-center gap-4 text-xs">
                 <div
-                  className="rounded border border-custom-border-100 shadow p-1.5 px-2 flex items-center gap-1 hover:bg-custom-background-80 transition-all cursor-pointer select-none"
+                  className="flex cursor-pointer select-none items-center gap-1 rounded border border-custom-border-100 p-1.5 px-2 shadow transition-all hover:bg-custom-background-80"
                   onClick={() => handleIssuesLoader({ key: "visibility", issueId: parentIssue?.id })}
                 >
-                  <div className="flex-shrink-0 w-[16px] h-[16px] flex justify-center items-center">
+                  <div className="flex h-[16px] w-[16px] flex-shrink-0 items-center justify-center">
                     {issuesLoader.visibility.includes(parentIssue?.id) ? (
                       <ChevronDown width={16} strokeWidth={2} />
                     ) : (
@@ -216,15 +215,15 @@ export const SubIssuesRoot: React.FC<ISubIssuesRoot> = observer((props) => {
                 </div>
 
                 {isEditable && issuesLoader.visibility.includes(parentIssue?.id) && (
-                  <div className="ml-auto flex-shrink-0 flex items-center gap-2 select-none">
+                  <div className="ml-auto flex flex-shrink-0 select-none items-center gap-2">
                     <div
-                      className="hover:bg-custom-background-80 transition-all cursor-pointer p-1.5 px-2 rounded border border-custom-border-100 shadow"
+                      className="cursor-pointer rounded border border-custom-border-100 p-1.5 px-2 shadow transition-all hover:bg-custom-background-80"
                       onClick={() => handleIssueCrudOperation("create", parentIssue?.id)}
                     >
                       Add sub-issue
                     </div>
                     <div
-                      className="hover:bg-custom-background-80 transition-all cursor-pointer p-1.5 px-2 rounded border border-custom-border-100 shadow"
+                      className="cursor-pointer rounded border border-custom-border-100 p-1.5 px-2 shadow transition-all hover:bg-custom-background-80"
                       onClick={() => handleIssueCrudOperation("existing", parentIssue?.id)}
                     >
                       Add an existing issue
@@ -261,7 +260,7 @@ export const SubIssuesRoot: React.FC<ISubIssuesRoot> = observer((props) => {
                     </>
                   }
                   buttonClassName="whitespace-nowrap"
-                  // position="left"
+                  placement="bottom-end"
                   noBorder
                   noChevron
                 >
@@ -286,8 +285,8 @@ export const SubIssuesRoot: React.FC<ISubIssuesRoot> = observer((props) => {
             </>
           ) : (
             isEditable && (
-              <div className="flex justify-between items-center">
-                <div className="text-xs py-2 text-custom-text-300 italic">No Sub-Issues yet</div>
+              <div className="flex items-center justify-between">
+                <div className="py-2 text-xs italic text-custom-text-300">No Sub-Issues yet</div>
                 <div>
                   <CustomMenu
                     label={
@@ -297,7 +296,7 @@ export const SubIssuesRoot: React.FC<ISubIssuesRoot> = observer((props) => {
                       </>
                     }
                     buttonClassName="whitespace-nowrap"
-                    // position="left"
+                    placement="bottom-end"
                     noBorder
                     noChevron
                   >
@@ -356,7 +355,8 @@ export const SubIssuesRoot: React.FC<ISubIssuesRoot> = observer((props) => {
             </>
           )}
           {isEditable &&
-            issueCrudOperation?.delete?.toggle &&
+            workspaceSlug &&
+            projectId &&
             issueCrudOperation?.delete?.issueId &&
             issueCrudOperation?.delete?.issue && (
               <DeleteIssueModal
@@ -366,6 +366,13 @@ export const SubIssuesRoot: React.FC<ISubIssuesRoot> = observer((props) => {
                   handleIssueCrudOperation("delete", null, null);
                 }}
                 data={issueCrudOperation?.delete?.issue}
+                onSubmit={async () => {
+                  await removeIssue(
+                    workspaceSlug.toString(),
+                    projectId.toString(),
+                    issueCrudOperation?.delete?.issue?.id ?? ""
+                  );
+                }}
               />
             )}
         </>

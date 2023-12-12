@@ -39,8 +39,10 @@ from plane.app.serializers import (
 )
 
 from plane.app.permissions import (
+    WorkspaceUserPermission,
     ProjectBasePermission,
     ProjectMemberPermission,
+    ProjectLitePermission,
 )
 
 from plane.db.models import (
@@ -165,6 +167,7 @@ class ProjectViewSet(WebhookMixin, BaseViewSet):
                         workspace__slug=slug,
                         is_active=True,
                     ).select_related("member"),
+                    to_attr="members_list",
                 )
             )
             .order_by("sort_order", "name")
@@ -599,6 +602,18 @@ class ProjectMemberViewSet(BaseViewSet):
     permission_classes = [
         ProjectMemberPermission,
     ]
+
+    def get_permissions(self):
+        if self.action == "leave":
+            self.permission_classes = [
+                ProjectLitePermission,
+            ]
+        else:
+            self.permission_classes = [
+                ProjectMemberPermission,
+            ]
+
+        return super(ProjectMemberViewSet, self).get_permissions()
 
     search_fields = [
         "member__display_name",
@@ -1048,3 +1063,20 @@ class ProjectDeployBoardViewSet(BaseViewSet):
 
         serializer = ProjectDeployBoardSerializer(project_deploy_board)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserProjectRolesEndpoint(BaseAPIView):
+    permission_classes = [
+        WorkspaceUserPermission,
+    ]
+
+    def get(self, request, slug):
+        project_members = ProjectMember.objects.filter(
+            workspace__slug=slug,
+            member_id=request.user.id,
+        ).values("project_id", "role")
+
+        project_members = {
+            str(member["project_id"]): member["role"] for member in project_members
+        }
+        return Response(project_members, status=status.HTTP_200_OK)

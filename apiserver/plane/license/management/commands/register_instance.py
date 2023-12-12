@@ -1,7 +1,7 @@
 # Python imports
 import json
-import os
 import requests
+import secrets
 
 # Django imports
 from django.core.management.base import BaseCommand, CommandError
@@ -30,13 +30,10 @@ class Command(BaseCommand):
                 # Load JSON content from the file
                 data = json.load(file)
 
-            machine_signature = options.get("machine_signature", False)
-            
+            machine_signature = options.get("machine_signature", "machine-signature")
 
             if not machine_signature:
                 raise CommandError("Machine signature is required")
-
-            headers = {"Content-Type": "application/json"}
 
             payload = {
                 "instance_key": settings.INSTANCE_KEY,
@@ -45,32 +42,21 @@ class Command(BaseCommand):
                 "user_count": User.objects.filter(is_bot=False).count(),
             }
 
-            response = requests.post(
-                f"{settings.LICENSE_ENGINE_BASE_URL}/api/instances/",
-                headers=headers,
-                data=json.dumps(payload),
+            instance = Instance.objects.create(
+                instance_name="Plane Free",
+                instance_id=secrets.token_hex(12),
+                license_key=None,
+                api_key=secrets.token_hex(8),
+                version=payload.get("version"),
+                last_checked_at=timezone.now(),
+                user_count=payload.get("user_count", 0),
             )
 
-            if response.status_code == 201:
-                data = response.json()
-                # Create instance
-                instance = Instance.objects.create(
-                    instance_name="Plane Free",
-                    instance_id=data.get("id"),
-                    license_key=data.get("license_key"),
-                    api_key=data.get("api_key"),
-                    version=data.get("version"),
-                    last_checked_at=timezone.now(),
-                    user_count=data.get("user_count", 0),
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Instance registered"
                 )
-
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"Instance successfully registered"
-                    )
-                )
-                return
-            raise CommandError("Instance could not be registered")
+            )        
         else:
             self.stdout.write(
                 self.style.SUCCESS(

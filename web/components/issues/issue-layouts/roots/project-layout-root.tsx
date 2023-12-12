@@ -36,19 +36,19 @@ export const ProjectLayoutRoot: React.FC = observer(() => {
   const activeLayout = issueFilters?.displayFilters?.layout;
 
   return (
-    <div className="relative w-full h-full flex flex-col overflow-hidden">
+    <div className="relative flex h-full w-full flex-col overflow-hidden">
       <ProjectAppliedFiltersRoot />
 
-      {loader === "init-loader" ? (
-        <div className="w-full h-full flex justify-center items-center">
+      {loader === "init-loader" || !getIssues ? (
+        <div className="flex h-full w-full items-center justify-center">
           <Spinner />
         </div>
       ) : (
         <>
-          {Object.keys(getIssues ?? {}).length == 0 && !loader ? (
+          {Object.keys(getIssues ?? {}).length == 0 ? (
             <ProjectEmptyState />
           ) : (
-            <div className="w-full h-full relative overflow-auto">
+            <div className="relative h-full w-full overflow-auto">
               {activeLayout === "list" ? (
                 <ListLayout />
               ) : activeLayout === "kanban" ? (

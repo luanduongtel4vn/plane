@@ -12,9 +12,14 @@ interface IssueBlocksListProps {
   isDragDisabled: boolean;
   showEmptyGroup: boolean;
   handleIssues: (sub_group_by: string | null, group_by: string | null, issue: IIssue, action: EIssueActions) => void;
-  quickActions: (sub_group_by: string | null, group_by: string | null, issue: IIssue) => React.ReactNode;
+  quickActions: (
+    sub_group_by: string | null,
+    group_by: string | null,
+    issue: IIssue,
+    customActionButton?: React.ReactElement
+  ) => React.ReactNode;
   displayProperties: IIssueDisplayProperties | null;
-  isReadOnly: boolean;
+  canEditProperties: (projectId: string | undefined) => boolean;
 }
 
 export const KanbanIssueBlocksList: React.FC<IssueBlocksListProps> = (props) => {
@@ -28,7 +33,7 @@ export const KanbanIssueBlocksList: React.FC<IssueBlocksListProps> = (props) => 
     handleIssues,
     quickActions,
     displayProperties,
-    isReadOnly,
+    canEditProperties,
   } = props;
 
   return (
@@ -52,14 +57,14 @@ export const KanbanIssueBlocksList: React.FC<IssueBlocksListProps> = (props) => 
                 columnId={columnId}
                 sub_group_id={sub_group_id}
                 isDragDisabled={isDragDisabled}
-                isReadOnly={isReadOnly}
+                canEditProperties={canEditProperties}
               />
             );
           })}
         </>
       ) : (
         !isDragDisabled && (
-          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+          <div className="absolute left-0 top-0 flex h-full w-full items-center justify-center">
             {/* <div className="text-custom-text-300 text-sm">Drop here</div> */}
           </div>
         )

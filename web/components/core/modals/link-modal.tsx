@@ -14,8 +14,8 @@ type Props = {
   handleClose: () => void;
   data?: ILinkDetails | null;
   status: boolean;
-  createIssueLink: (formData: IIssueLink | ModuleLink) => Promise<void>;
-  updateIssueLink: (formData: IIssueLink | ModuleLink, linkId: string) => Promise<void>;
+  createIssueLink: (formData: IIssueLink | ModuleLink) => Promise<ILinkDetails> | Promise<void> | void;
+  updateIssueLink: (formData: IIssueLink | ModuleLink, linkId: string) => Promise<ILinkDetails> | Promise<void> | void;
 };
 
 const defaultValues: IIssueLink | ModuleLink = {
@@ -31,7 +31,7 @@ export const LinkModal: FC<Props> = (props) => {
     handleSubmit,
     control,
     reset,
-  } = useForm<ModuleLink>({
+  } = useForm<IIssueLink | ModuleLink>({
     defaultValues,
   });
 
@@ -99,7 +99,7 @@ export const LinkModal: FC<Props> = (props) => {
                       </Dialog.Title>
                       <div className="mt-2 space-y-3">
                         <div>
-                          <label htmlFor="url" className="text-custom-text-200 mb-2">
+                          <label htmlFor="url" className="mb-2 text-custom-text-200">
                             URL
                           </label>
                           <Controller
@@ -124,7 +124,7 @@ export const LinkModal: FC<Props> = (props) => {
                           />
                         </div>
                         <div>
-                          <label htmlFor="title" className="text-custom-text-200 mb-2">
+                          <label htmlFor="title" className="mb-2 text-custom-text-200">
                             {`Title (optional)`}
                           </label>
                           <Controller

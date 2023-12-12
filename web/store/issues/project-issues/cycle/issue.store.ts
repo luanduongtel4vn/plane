@@ -5,7 +5,7 @@ import { IssueBaseStore } from "store/issues";
 import { IssueService } from "services/issue";
 import { CycleService } from "services/cycle.service";
 // types
-import { CycleIssueResponse, TIssueGroupByOptions } from "types";
+import { TIssueGroupByOptions } from "types";
 import { IIssue } from "types/issues";
 import { IIssueResponse, TLoader, IGroupedIssues, ISubGroupedIssues, TUnGroupedIssues, ViewFlags } from "../../types";
 import { RootStore } from "store/root";
@@ -53,7 +53,8 @@ export interface ICycleIssuesStore {
     workspaceSlug: string,
     cycleId: string,
     issueIds: string[],
-    fetchAfterAddition?: boolean
+    fetchAfterAddition?: boolean,
+    projectId?: string
   ) => Promise<IIssue>;
   removeIssueFromCycle: (
     workspaceSlug: string,
@@ -81,9 +82,6 @@ export class CycleIssuesStore extends IssueBaseStore implements ICycleIssuesStor
   // service
   cycleService;
   issueService;
-
-  //projectId
-  currentProjectId: string | undefined;
 
   //viewData
   viewFlags = {
@@ -173,8 +171,6 @@ export class CycleIssuesStore extends IssueBaseStore implements ICycleIssuesStor
     try {
       this.loader = loadType;
 
-      this.currentProjectId = projectId;
-
       const params = this.rootStore?.cycleIssuesFilter?.appliedFilters;
       const response = await this.cycleService.getCycleIssuesWithParams(workspaceSlug, projectId, cycleId, params);
 
@@ -261,6 +257,7 @@ export class CycleIssuesStore extends IssueBaseStore implements ICycleIssuesStor
       if (!_issues) _issues = {};
       if (!_issues[cycleId]) _issues[cycleId] = {};
       delete _issues?.[cycleId]?.[issueId];
+      _issues[cycleId] = { ..._issues[cycleId] };
 
       runInAction(() => {
         this.issues = _issues;
@@ -314,19 +311,28 @@ export class CycleIssuesStore extends IssueBaseStore implements ICycleIssuesStor
     }
   };
 
-  addIssueToCycle = async (workspaceSlug: string, cycleId: string, issueIds: string[], fetchAfterAddition = true) => {
-    if (!this.currentProjectId) return;
+  addIssueToCycle = async (
+    workspaceSlug: string,
+    cycleId: string,
+    issueIds: string[],
+    fetchAfterAddition = true,
+    projectId?: string
+  ) => {
+    const activeProjectId = this.rootStore.project.projectId;
+    if (!activeProjectId && !projectId) return;
+
+    const projectIdToUpdate: string = projectId || activeProjectId || "";
 
     try {
-      const issueToCycle = await this.issueService.addIssueToCycle(workspaceSlug, this.currentProjectId, cycleId, {
+      const issueToCycle = await this.issueService.addIssueToCycle(workspaceSlug, projectIdToUpdate, cycleId, {
         issues: issueIds,
       });
 
-      if (fetchAfterAddition) this.fetchIssues(workspaceSlug, this.currentProjectId, "mutation", cycleId);
+      if (fetchAfterAddition) this.fetchIssues(workspaceSlug, projectIdToUpdate, "mutation", cycleId);
 
       return issueToCycle;
     } catch (error) {
-      this.fetchIssues(workspaceSlug, this.currentProjectId, "mutation", cycleId);
+      this.fetchIssues(workspaceSlug, projectIdToUpdate, "mutation", cycleId);
       throw error;
     }
   };

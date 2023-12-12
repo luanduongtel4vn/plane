@@ -17,7 +17,6 @@ from slack_sdk.errors import SlackApiError
 
 # Module imports
 from plane.db.models import Workspace, WorkspaceMemberInvite, User
-from plane.license.models import InstanceConfiguration, Instance
 from plane.license.utils.instance_value import get_email_configuration
 
 
@@ -37,9 +36,6 @@ def workspace_invitation(email, workspace_id, token, current_site, invitor):
         # The complete url including the domain
         abs_url = str(current_site) + relative_link
 
-        instance_configuration = InstanceConfiguration.objects.filter(
-            key__startswith="EMAIL_"
-        ).values("key", "value")
 
         (
             EMAIL_HOST,
@@ -48,32 +44,7 @@ def workspace_invitation(email, workspace_id, token, current_site, invitor):
             EMAIL_PORT,
             EMAIL_USE_TLS,
             EMAIL_FROM,
-        ) = get_email_configuration(instance_configuration=instance_configuration)
-
-        # Send the email if the users don't have smtp configured
-        if not (EMAIL_HOST and EMAIL_HOST_USER and EMAIL_HOST_PASSWORD):
-            # Check the instance registration
-            instance = Instance.objects.first()
-
-            headers = {
-                "Content-Type": "application/json",
-                "x-instance-id": instance.instance_id,
-                "x-api-key": instance.api_key,
-            }
-
-            payload = {
-                "user": user.first_name or user.display_name or user.email,
-                "workspace_name": workspace.name,
-                "invitation_url": abs_url,
-                "email": email,
-            }
-            _ = requests.post(
-                f"{settings.LICENSE_ENGINE_BASE_URL}/api/instances/users/workspace-invitation/",
-                headers=headers,
-                data=json.dumps(payload),
-            )
-
-            return
+        ) = get_email_configuration()
 
         # Subject of the email
         subject = f"{user.first_name or user.display_name or user.email} has invited you to join them in {workspace.name} on Plane"
@@ -94,9 +65,6 @@ def workspace_invitation(email, workspace_id, token, current_site, invitor):
         workspace_member_invite.message = text_content
         workspace_member_invite.save()
 
-        instance_configuration = InstanceConfiguration.objects.filter(
-            key__startswith="EMAIL_"
-        ).values("key", "value")
         connection = get_connection(
             host=EMAIL_HOST,
             port=int(EMAIL_PORT),

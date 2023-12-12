@@ -37,12 +37,9 @@ export const InboxMainContent: React.FC = observer(() => {
   const {
     inboxIssues: inboxIssuesStore,
     inboxIssueDetails: inboxIssueDetailsStore,
-    user: userStore,
+    user: { currentUser, currentProjectRole },
     projectState: { states },
   } = useMobxStore();
-
-  const user = userStore.currentUser;
-  const userRole = userStore.currentProjectRole;
 
   const { reset, control, watch } = useForm<IIssue>({
     defaultValues,
@@ -140,7 +137,7 @@ export const InboxMainContent: React.FC = observer(() => {
 
   if (!inboxIssueId)
     return (
-      <div className="h-full p-4 grid place-items-center text-custom-text-200">
+      <div className="grid h-full place-items-center p-4 text-custom-text-200">
         <div className="grid h-full place-items-center">
           <div className="my-5 flex flex-col items-center gap-4">
             <Inbox size={60} strokeWidth={1.5} />
@@ -156,28 +153,28 @@ export const InboxMainContent: React.FC = observer(() => {
       </div>
     );
 
-  const isAllowed = !!userRole && userRole >= EUserWorkspaceRoles.MEMBER;
+  const isAllowed = !!currentProjectRole && currentProjectRole >= EUserWorkspaceRoles.MEMBER;
 
   return (
     <>
       {issueDetails ? (
-        <div className="flex h-full overflow-auto divide-x">
-          <div className="basis-2/3 h-full overflow-auto p-5 space-y-3">
+        <div className="flex h-full divide-x overflow-auto">
+          <div className="h-full basis-2/3 space-y-3 overflow-auto p-5">
             <div
-              className={`flex items-center gap-2 p-3 text-sm border rounded-md ${
+              className={`flex items-center gap-2 rounded-md border p-3 text-sm ${
                 issueStatus === -2
-                  ? "text-yellow-500 border-yellow-500 bg-yellow-500/10"
+                  ? "border-yellow-500 bg-yellow-500/10 text-yellow-500"
                   : issueStatus === -1
-                  ? "text-red-500 border-red-500 bg-red-500/10"
-                  : issueStatus === 0
-                  ? new Date(issueDetails.issue_inbox[0].snoozed_till ?? "") < new Date()
-                    ? "text-red-500 border-red-500 bg-red-500/10"
-                    : "text-custom-text-200 border-gray-500 bg-gray-500/10"
-                  : issueStatus === 1
-                  ? "text-green-500 border-green-500 bg-green-500/10"
-                  : issueStatus === 2
-                  ? "text-custom-text-200 border-gray-500 bg-gray-500/10"
-                  : ""
+                    ? "border-red-500 bg-red-500/10 text-red-500"
+                    : issueStatus === 0
+                      ? new Date(issueDetails.issue_inbox[0].snoozed_till ?? "") < new Date()
+                        ? "border-red-500 bg-red-500/10 text-red-500"
+                        : "border-gray-500 bg-gray-500/10 text-custom-text-200"
+                      : issueStatus === 1
+                        ? "border-green-500 bg-green-500/10 text-green-500"
+                        : issueStatus === 2
+                          ? "border-gray-500 bg-gray-500/10 text-custom-text-200"
+                          : ""
               }`}
             >
               {issueStatus === -2 ? (
@@ -219,7 +216,7 @@ export const InboxMainContent: React.FC = observer(() => {
                       href={`/${workspaceSlug}/projects/${projectId}/issues/${issueDetails.issue_inbox[0].duplicate_to}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="underline flex items-center gap-2"
+                      className="flex items-center gap-2 underline"
                     >
                       this issue <ExternalLink size={12} strokeWidth={2} />
                     </a>
@@ -228,10 +225,10 @@ export const InboxMainContent: React.FC = observer(() => {
                 </>
               ) : null}
             </div>
-            <div className="flex items-center mb-5">
+            <div className="mb-5 flex items-center">
               {currentIssueState && (
                 <StateGroupIcon
-                  className="h-4 w-4 mr-3"
+                  className="mr-3 h-4 w-4"
                   stateGroup={currentIssueState.group}
                   color={currentIssueState.color}
                 />
@@ -246,14 +243,20 @@ export const InboxMainContent: React.FC = observer(() => {
                 issue={{
                   name: issueDetails.name,
                   description_html: issueDetails.description_html,
+                  id: issueDetails.id,
                 }}
                 handleFormSubmit={submitChanges}
-                isAllowed={isAllowed || user?.id === issueDetails.created_by}
+                isAllowed={isAllowed || currentUser?.id === issueDetails.created_by}
               />
             </div>
 
-            <IssueReaction projectId={projectId} workspaceSlug={workspaceSlug} issueId={issueDetails.id} />
-
+            {workspaceSlug && projectId && (
+              <IssueReaction
+                workspaceSlug={workspaceSlug.toString()}
+                projectId={projectId.toString()}
+                issueId={issueDetails.id}
+              />
+            )}
             <InboxIssueActivity issueDetails={issueDetails} />
           </div>
 

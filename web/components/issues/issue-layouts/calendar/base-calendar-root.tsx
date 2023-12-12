@@ -4,6 +4,8 @@ import { observer } from "mobx-react-lite";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 // components
 import { CalendarChart, IssuePeekOverview } from "components/issues";
+// hooks
+import useToast from "hooks/use-toast";
 // types
 import { IIssue } from "types";
 import {
@@ -16,7 +18,6 @@ import {
   IViewIssuesFilterStore,
   IViewIssuesStore,
 } from "store/issues";
-import { IIssueCalendarViewStore } from "store/issue";
 import { IQuickActionProps } from "../list/list-view-types";
 import { EIssueActions } from "../types";
 import { IGroupedIssues } from "store/issues/types";
@@ -28,15 +29,14 @@ interface IBaseCalendarRoot {
     | IModuleIssuesFilterStore
     | ICycleIssuesFilterStore
     | IViewIssuesFilterStore;
-  calendarViewStore: IIssueCalendarViewStore;
   QuickActions: FC<IQuickActionProps>;
   issueActions: {
-    [EIssueActions.DELETE]: (issue: IIssue) => void;
-    [EIssueActions.UPDATE]?: (issue: IIssue) => void;
-    [EIssueActions.REMOVE]?: (issue: IIssue) => void;
+    [EIssueActions.DELETE]: (issue: IIssue) => Promise<void>;
+    [EIssueActions.UPDATE]?: (issue: IIssue) => Promise<void>;
+    [EIssueActions.REMOVE]?: (issue: IIssue) => Promise<void>;
   };
   viewId?: string;
-  handleDragDrop: (source: any, destination: any, issues: any, issueWithIds: any) => void;
+  handleDragDrop: (source: any, destination: any, issues: any, issueWithIds: any) => Promise<void>;
 }
 
 export const BaseCalendarRoot = observer((props: IBaseCalendarRoot) => {
@@ -46,12 +46,15 @@ export const BaseCalendarRoot = observer((props: IBaseCalendarRoot) => {
   const router = useRouter();
   const { workspaceSlug, peekIssueId, peekProjectId } = router.query;
 
+  // hooks
+  const { setToastAlert } = useToast();
+
   const displayFilters = issuesFilterStore.issueFilters?.displayFilters;
 
   const issues = issueStore.getIssues;
   const groupedIssueIds = (issueStore.getIssuesIds ?? {}) as IGroupedIssues;
 
-  const onDragEnd = (result: DropResult) => {
+  const onDragEnd = async (result: DropResult) => {
     if (!result) return;
 
     // return if not dropped on the correct place
@@ -60,13 +63,21 @@ export const BaseCalendarRoot = observer((props: IBaseCalendarRoot) => {
     // return if dropped on the same date
     if (result.destination.droppableId === result.source.droppableId) return;
 
-    if (handleDragDrop) handleDragDrop(result.source, result.destination, issues, groupedIssueIds);
+    if (handleDragDrop) {
+      await handleDragDrop(result.source, result.destination, issues, groupedIssueIds).catch((err) => {
+        setToastAlert({
+          title: "Error",
+          type: "error",
+          message: err.detail ?? "Failed to perform this action",
+        });
+      });
+    }
   };
 
   const handleIssues = useCallback(
-    (date: string, issue: IIssue, action: EIssueActions) => {
+    async (date: string, issue: IIssue, action: EIssueActions) => {
       if (issueActions[action]) {
-        issueActions[action]!(issue);
+        await issueActions[action]!(issue);
       }
     },
     [issueActions]
@@ -74,15 +85,17 @@ export const BaseCalendarRoot = observer((props: IBaseCalendarRoot) => {
 
   return (
     <>
-      <div className="h-full w-full pt-4 bg-custom-background-100 overflow-hidden">
+      <div className="h-full w-full overflow-hidden bg-custom-background-100 pt-4">
         <DragDropContext onDragEnd={onDragEnd}>
           <CalendarChart
+            issuesFilterStore={issuesFilterStore}
             issues={issues}
             groupedIssueIds={groupedIssueIds}
             layout={displayFilters?.calendar?.layout}
             showWeekends={displayFilters?.calendar?.show_weekends ?? false}
-            quickActions={(issue) => (
+            quickActions={(issue, customActionButton) => (
               <QuickActions
+                customActionButton={customActionButton}
                 issue={issue}
                 handleDelete={async () => handleIssues(issue.target_date ?? "", issue, EIssueActions.DELETE)}
                 handleUpdate={
@@ -107,8 +120,8 @@ export const BaseCalendarRoot = observer((props: IBaseCalendarRoot) => {
           workspaceSlug={workspaceSlug.toString()}
           projectId={peekProjectId.toString()}
           issueId={peekIssueId.toString()}
-          handleIssue={(issueToUpdate) =>
-            handleIssues(issueToUpdate.target_date ?? "", issueToUpdate as IIssue, EIssueActions.UPDATE)
+          handleIssue={async (issueToUpdate) =>
+            await handleIssues(issueToUpdate.target_date ?? "", issueToUpdate as IIssue, EIssueActions.UPDATE)
           }
         />
       )}

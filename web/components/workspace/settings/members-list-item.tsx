@@ -40,7 +40,7 @@ export const WorkspaceMembersListItem: FC<Props> = observer((props) => {
   const { workspaceSlug } = router.query;
   // store
   const {
-    workspaceMember: { removeMember, updateMember, deleteWorkspaceInvitation },
+    workspaceMember: { removeMember, updateMember, updateMemberInvitation, deleteWorkspaceInvitation },
     user: { currentWorkspaceMemberInfo, currentWorkspaceRole, currentUser, currentUserSettings, leaveWorkspace },
   } = useMobxStore();
   // states
@@ -141,14 +141,14 @@ export const WorkspaceMembersListItem: FC<Props> = observer((props) => {
               <span className="relative flex h-10 w-10 items-center justify-center rounded p-4 capitalize text-white">
                 <img
                   src={member.avatar}
-                  className="absolute top-0 left-0 h-full w-full object-cover rounded"
+                  className="absolute left-0 top-0 h-full w-full rounded object-cover"
                   alt={member.display_name || member.email}
                 />
               </span>
             </Link>
           ) : (
             <Link href={`/${workspaceSlug}/profile/${member.memberId}`}>
-              <span className="relative flex h-10 w-10 items-center justify-center rounded p-4 capitalize bg-gray-700 text-white">
+              <span className="relative flex h-10 w-10 items-center justify-center rounded bg-gray-700 p-4 capitalize text-white">
                 {(member.email ?? member.display_name ?? "?")[0]}
               </span>
             </Link>
@@ -161,7 +161,7 @@ export const WorkspaceMembersListItem: FC<Props> = observer((props) => {
                 </span>
               </Link>
             ) : (
-              <h4 className="text-sm cursor-default">{member.display_name || member.email}</h4>
+              <h4 className="cursor-default text-sm">{member.display_name || member.email}</h4>
             )}
             <div className="flex items-center">
               <p className="text-xs text-custom-text-300">{member.display_name}</p>
@@ -176,20 +176,20 @@ export const WorkspaceMembersListItem: FC<Props> = observer((props) => {
         </div>
         <div className="flex items-center gap-2 text-xs">
           {!member?.status && (
-            <div className="flex items-center justify-center rounded bg-yellow-500/20 px-2.5 py-1 text-center text-xs text-yellow-500 font-medium">
+            <div className="flex items-center justify-center rounded bg-yellow-500/20 px-2.5 py-1 text-center text-xs font-medium text-yellow-500">
               <p>Pending</p>
             </div>
           )}
           {member?.status && !member?.accountCreated && (
-            <div className="flex items-center justify-center rounded bg-blue-500/20 px-2.5 py-1 text-center text-xs text-blue-500 font-medium">
+            <div className="flex items-center justify-center rounded bg-blue-500/20 px-2.5 py-1 text-center text-xs font-medium text-blue-500">
               <p>Account not created</p>
             </div>
           )}
           <CustomSelect
             customButton={
-              <div className="flex item-center gap-1 px-2 py-0.5 rounded">
+              <div className="item-center flex gap-1 rounded px-2 py-0.5">
                 <span
-                  className={`flex items-center text-xs font-medium rounded ${
+                  className={`flex items-center rounded text-xs font-medium ${
                     hasRoleChangeAccess ? "" : "text-custom-sidebar-text-400"
                   }`}
                 >
@@ -206,15 +206,26 @@ export const WorkspaceMembersListItem: FC<Props> = observer((props) => {
             onChange={(value: TUserWorkspaceRole | undefined) => {
               if (!workspaceSlug || !value) return;
 
-              updateMember(workspaceSlug.toString(), member.id, {
-                role: value,
-              }).catch(() => {
-                setToastAlert({
-                  type: "error",
-                  title: "Error!",
-                  message: "An error occurred while updating member role. Please try again.",
+              if (!member?.status)
+                updateMemberInvitation(workspaceSlug.toString(), member.id, {
+                  role: value,
+                }).catch(() => {
+                  setToastAlert({
+                    type: "error",
+                    title: "Error!",
+                    message: "An error occurred while updating member role. Please try again.",
+                  });
                 });
-              });
+              else
+                updateMember(workspaceSlug.toString(), member.id, {
+                  role: value,
+                }).catch(() => {
+                  setToastAlert({
+                    type: "error",
+                    title: "Error!",
+                    message: "An error occurred while updating member role. Please try again.",
+                  });
+                });
             }}
             disabled={!hasRoleChangeAccess}
             placement="bottom-end"
@@ -239,8 +250,8 @@ export const WorkspaceMembersListItem: FC<Props> = observer((props) => {
               onClick={() => setRemoveMemberModal(true)}
               className={
                 isAdmin || isCurrentUser
-                  ? "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
-                  : "opacity-0 pointer-events-none"
+                  ? "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100"
+                  : "pointer-events-none opacity-0"
               }
             >
               <XCircle className="h-3.5 w-3.5 text-red-500" strokeWidth={2} />

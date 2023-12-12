@@ -66,7 +66,8 @@ export const CreateProjectModal: FC<Props> = observer((props) => {
   const {
     project: projectStore,
     workspaceMember: { workspaceMembers },
-    trackEvent: { postHogEventTracker }
+    trackEvent: { postHogEventTracker },
+    workspace: { currentWorkspace },
   } = useMobxStore();
   // states
   const [isChangeInIdentifierRequired, setIsChangeInIdentifierRequired] = useState(true);
@@ -132,12 +133,13 @@ export const CreateProjectModal: FC<Props> = observer((props) => {
       .then((res) => {
         const newPayload = {
           ...res,
-          state: "SUCCESS"
-        }
-        postHogEventTracker(
-          "PROJECT_CREATE",
-          newPayload,
-        )
+          state: "SUCCESS",
+        };
+        postHogEventTracker("PROJECT_CREATED", newPayload, {
+          isGrouping: true,
+          groupType: "Workspace_metrics",
+          gorupId: res.workspace,
+        });
         setToastAlert({
           type: "success",
           title: "Success!",
@@ -156,13 +158,17 @@ export const CreateProjectModal: FC<Props> = observer((props) => {
             message: err.data[key],
           });
           postHogEventTracker(
-            "PROJECT_CREATE",
+            "PROJECT_CREATED",
             {
-              state: "FAILED"
+              state: "FAILED",
             },
-          )
-        }
-        );
+            {
+              isGrouping: true,
+              groupType: "Workspace_metrics",
+              gorupId: currentWorkspace?.id!,
+            }
+          );
+        });
       });
   };
 
@@ -216,12 +222,12 @@ export const CreateProjectModal: FC<Props> = observer((props) => {
               leaveFrom="opacity-100 translate-y-0 sm:scale-100"
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
-              <Dialog.Panel className="transform rounded-lg bg-custom-background-100 text-left shadow-custom-shadow-md transition-all p-3 w-full sm:w-3/5 lg:w-1/2 xl:w-2/5">
+              <Dialog.Panel className="w-full transform rounded-lg bg-custom-background-100 p-3 text-left shadow-custom-shadow-md transition-all sm:w-3/5 lg:w-1/2 xl:w-2/5">
                 <div className="group relative h-44 w-full rounded-lg bg-custom-background-80">
                   {watch("cover_image") !== null && (
                     <img
                       src={watch("cover_image")!}
-                      className="absolute top-0 left-0 h-full w-full object-cover rounded-lg"
+                      className="absolute left-0 top-0 h-full w-full rounded-lg object-cover"
                       alt="Cover Image"
                     />
                   )}
@@ -248,7 +254,7 @@ export const CreateProjectModal: FC<Props> = observer((props) => {
                       render={({ field: { value, onChange } }) => (
                         <EmojiIconPicker
                           label={
-                            <div className="h-[44px] w-[44px] grid place-items-center rounded-md bg-custom-background-80 outline-none text-lg">
+                            <div className="grid h-[44px] w-[44px] place-items-center rounded-md bg-custom-background-80 text-lg outline-none">
                               {value ? renderEmoji(value) : "Icon"}
                             </div>
                           }
@@ -261,7 +267,7 @@ export const CreateProjectModal: FC<Props> = observer((props) => {
                 </div>
                 <form onSubmit={handleSubmit(onSubmit)} className="divide-y-[0.5px] divide-custom-border-100 px-3">
                   <div className="mt-9 space-y-6 pb-5">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-y-3 gap-x-2">
+                    <div className="grid grid-cols-1 gap-x-2 gap-y-3 md:grid-cols-4">
                       <div className="md:col-span-3">
                         <Controller
                           control={control}
@@ -316,7 +322,7 @@ export const CreateProjectModal: FC<Props> = observer((props) => {
                               onChange={handleIdentifierChange(onChange)}
                               hasError={Boolean(errors.identifier)}
                               placeholder="Identifier"
-                              className="text-xs w-full focus:border-blue-400"
+                              className="w-full text-xs focus:border-blue-400"
                             />
                           )}
                         />
@@ -334,7 +340,7 @@ export const CreateProjectModal: FC<Props> = observer((props) => {
                               tabIndex={3}
                               placeholder="Description..."
                               onChange={onChange}
-                              className="text-sm !h-24 focus:border-blue-400"
+                              className="!h-24 text-sm focus:border-blue-400"
                               hasError={Boolean(errors?.description)}
                             />
                           )}
@@ -342,7 +348,7 @@ export const CreateProjectModal: FC<Props> = observer((props) => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex flex-wrap items-center gap-2">
                       <div className="flex-shrink-0" tabIndex={4}>
                         <Controller
                           name="network"
@@ -386,7 +392,9 @@ export const CreateProjectModal: FC<Props> = observer((props) => {
                           control={control}
                           render={({ field: { value, onChange } }) => (
                             <WorkspaceMemberSelect
-                              value={workspaceMembers?.filter((member: IWorkspaceMember) => member.member.id === value)[0]}
+                              value={
+                                workspaceMembers?.filter((member: IWorkspaceMember) => member.member.id === value)[0]
+                              }
                               onChange={onChange}
                               options={workspaceMembers || []}
                               placeholder="Select Lead"
