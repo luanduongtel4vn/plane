@@ -11,11 +11,13 @@ import * as controllers from "./controllers";
 import loggerMiddleware from "./middlewares/logger.middleware";
 // utils
 import { logger } from "./utils/logger";
-
+// mq
+import { MQSingleton } from "./queue/mq.singleton";
 
 class ApiServer extends Server {
-  private readonly SERVER_STARTED = "Api server started on port: ";
+  private readonly SERVER_STARTED = "🚀 Api server started on port: ";
   SERVER_PORT: number;
+  mq: MQSingleton | null = null; // Declare the channel property
 
   constructor() {
     super(true);
@@ -39,6 +41,8 @@ class ApiServer extends Server {
     this.app.set("view engine", "hbs");
     // cors
     this.app.use(cors());
+    // setup mq
+    this.setupMQ();
     // sentry setup
     if (
       process.env.APP_ENV === "staging" ||
@@ -49,28 +53,48 @@ class ApiServer extends Server {
     }
     // setting up controllers
     this.setupControllers();
+    // not found page
+    this.setupNotFoundHandler();
     // setting up sentry error handling
     this.sentryErrorHandling();
   }
 
+  // get the current app instance
   public getAppInstance() {
     return this.app;
   }
 
+  // Setup MQ and initialize channel
+  private setupMQ(): void {
+    this.mq = MQSingleton.getInstance();
+  }
+
+  // setup all the controllers
   private setupControllers(): void {
     const controllerInstances = [];
     for (const name in controllers) {
       if (Object.prototype.hasOwnProperty.call(controllers, name)) {
         const Controller = (controllers as any)[name];
-        controllerInstances.push(new Controller());
+        controllerInstances.push(new Controller(this.mq));
       }
     }
     super.addControllers(controllerInstances);
   }
 
+  // This controller will return 404 for not found pages
+  private setupNotFoundHandler(): void {
+    this.app.use((req, res) => {
+      res.status(404).json({
+        status: "error",
+        message: "Not Found",
+        path: req.path,
+      });
+    });
+  }
+
   private setupSentryInit() {
     Sentry.init({
-      dsn: "",
+      dsn: process.env.SENTRY_DSN,
       integrations: [
         // enable HTTP calls tracing
         new Sentry.Integrations.Http({ tracing: true }),
