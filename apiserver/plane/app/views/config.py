@@ -112,7 +112,7 @@ class ConfigurationEndpoint(BaseAPIView):
         data["has_openai_configured"] = bool(OPENAI_API_KEY)
 
         # File size settings
-        data["file_size_limit"] = float(os.environ.get("FILE_SIZE_LIMIT", 104857600))
+        data["file_size_limit"] = float(os.environ.get("FILE_SIZE_LIMIT", 5242880))
 
         # is self managed
         data["is_self_managed"] = bool(int(os.environ.get("IS_SELF_MANAGED", "1")))
