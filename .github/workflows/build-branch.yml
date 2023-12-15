@@ -9,6 +9,7 @@ on:
       - preview
       - qa
       - develop
+      - debug
   release:
     types: [released, prereleased]
 

@@ -66,7 +66,8 @@ export const IssueAttachmentUpload: React.FC<Props> = observer((props) => {
         });
         setIsLoading(false);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.log("web ~ uploadIssueAttachment ~ error:", error)
         setIsLoading(false);
         setToastAlert({
           type: "error",

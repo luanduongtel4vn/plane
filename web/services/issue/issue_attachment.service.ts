@@ -20,6 +20,7 @@ export class IssueAttachmentService extends APIService {
     )
       .then((response) => response?.data)
       .catch((error) => {
+        console.log("service ~ uploadIssueAttachment ~ error:", error)
         throw error?.response?.data;
       });
   }
